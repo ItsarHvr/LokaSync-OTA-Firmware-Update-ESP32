@@ -7,8 +7,8 @@
 #define DHTPIN 5
 #define DHTTYPE DHT22
 
-const char* ssid = "INDOMIE AYAM BAWANG";
-const char* password = "agustus2023";
+const char* ssid = "INDOMIE AYAM BAWANG"; // Change this to your Local SSID
+const char* password = "agustus2023"; // Change this to your WiFi/SSID password
 const char* mqtt_server = "192.168.1.9";  // Change this to your EMQX server IP
 const int mqtt_port = 1883;
 
