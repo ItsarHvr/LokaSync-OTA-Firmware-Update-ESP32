@@ -1,5 +1,6 @@
+// This file is .ino file of ESP32-Universal-Test_Firmware.ino.bin firmware file.
+// That firmware (.bin) file will run on most ESP32 as tests for it's LED, ADC, and Touch sensor.
 #include <Arduino.h>
-
 // Define test GPIOs
 #define TEST_LED 2       // Most ESP32 boards have a built-in LED on GPIO 2
 #define TEST_ADC 34      // GPIO 34 is an ADC pin
