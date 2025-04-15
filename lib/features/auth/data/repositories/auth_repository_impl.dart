@@ -3,9 +3,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../models/user_model.dart';
-import '../../domain/entities/user_entity.dart';
-import '../../domain/repositories/auth_repository.dart';
+import 'package:lokasync/features/auth/data/models/user_model.dart';
+import 'package:lokasync/features/auth/domain/entities/user_entity.dart';
+import 'package:lokasync/features/auth/domain/repositories/auth_repository.dart';
 
 class AuthRepositoriesImpl implements AuthRepositories {
   final FirebaseAuth _firebaseAuth;
@@ -264,6 +264,37 @@ class AuthRepositoriesImpl implements AuthRepositories {
     }
   }
 
+  @override
+  Future<void> updateEmail(String newEmail, {required String password}) async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      
+      if (user != null && user.email != null) {
+        // Create credential and re-authenticate first (always required for email change)
+        final credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: password,
+        );
+        
+        // Re-authenticate
+        await user.reauthenticateWithCredential(credential);
+        
+        // Use verifyBeforeUpdateEmail instead of deprecated updateEmail
+        await user.verifyBeforeUpdateEmail(newEmail);
+        
+        // Reload user to get updated data
+        await user.reload();
+      } else {
+        throw FirebaseAuthException(
+          code: 'user-not-found',
+          message: 'Tidak ada pengguna yang sedang login.',
+        );
+      }
+    } on FirebaseAuthException {
+      rethrow;
+    }
+  }
+
   // ----------------------
   // Metode Verifikasi Email
   // ----------------------
@@ -378,6 +409,31 @@ class AuthRepositoriesImpl implements AuthRepositories {
       return await signInWithEmailAndPassword(email, password);
     } catch (e) {
       throw Exception('Sign in biometrik gagal: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<bool> isBiometricLoginEnabled() async {
+    try {
+      // Check if biometric credentials are stored
+      final hasEmail = await _secureStorage.read(key: 'biometric_email') != null;
+      final hasPassword = await _secureStorage.read(key: 'biometric_password') != null;
+      
+      // Only return true if both email and password are stored
+      return hasEmail && hasPassword;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  @override
+  Future<void> disableBiometricLogin() async {
+    try {
+      // Delete all stored biometric credentials
+      await _secureStorage.delete(key: 'biometric_email');
+      await _secureStorage.delete(key: 'biometric_password');
+    } catch (e) {
+      throw Exception('Gagal menonaktifkan login biometrik: ${e.toString()}');
     }
   }
 

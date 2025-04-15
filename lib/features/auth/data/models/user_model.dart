@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../domain/entities/user_entity.dart';
+import 'package:lokasync/features/auth/domain/entities/user_entity.dart';
 
 class UserModel extends FirebaseUserEntity {
   // Menggunakan super parameters untuk lebih singkat

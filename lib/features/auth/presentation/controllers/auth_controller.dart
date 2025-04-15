@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../data/repositories/auth_repository_impl.dart';
-import '../../domain/entities/user_entity.dart';
+import 'package:lokasync/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:lokasync/features/auth/domain/entities/user_entity.dart';
+
 
 class AuthController {
   final AuthRepositoriesImpl _authRepository;
@@ -139,6 +140,17 @@ class AuthController {
       rethrow;
     }
   }
+
+  /// Mengubah email pengguna
+  Future<void> updateEmail(String newEmail, {required String password}) async {
+    try {
+      await _authRepository.updateEmail(newEmail, password: password);
+    } on FirebaseAuthException {
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
+  }
   
   // ----------------------
   // Metode Verifikasi Email
@@ -195,12 +207,30 @@ class AuthController {
     }
   }
   
+  /// Menonaktifkan login biometrik
+  Future<void> disableBiometricLogin() async {
+    try {
+      await _authRepository.disableBiometricLogin();
+    } catch (e) {
+      rethrow;
+    }
+  }
+  
   /// Login dengan biometrik
   Future<FirebaseUserEntity?> signInWithBiometrics() async {
     try {
       return await _authRepository.signInWithBiometrics();
     } catch (e) {
       rethrow;
+    }
+  }
+
+  /// Cek apakah login biometrik sudah diaktifkan
+  Future<bool> isBiometricLoginEnabled() async {
+    try {
+      return await _authRepository.isBiometricLoginEnabled();
+    } catch (e) {
+      return false;
     }
   }
   

@@ -32,9 +32,11 @@ class _LoginState extends State<Login> {
 
   Future<void> _checkBiometricAvailability() async {
     final isAvailable = await _authController.isBiometricAvailable();
+    final isBiometricLoginEnabled = await _authController.isBiometricLoginEnabled();
+    
     if (mounted) {
       setState(() {
-        _isBiometricAvailable = isAvailable;
+        _isBiometricAvailable = isAvailable && isBiometricLoginEnabled;
       });
     }
   }

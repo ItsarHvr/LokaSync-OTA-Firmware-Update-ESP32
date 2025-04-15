@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokasync/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:lokasync/features/monitoring/presentation/pages/monitoring_page.dart';
+import 'package:lokasync/features/profile/presentation/pages/profile_page.dart';
 import 'package:lokasync/presentation/widgets/bottom_navbar.dart';
 
 class Home extends StatefulWidget {
@@ -99,9 +101,9 @@ class _HomeState extends State<Home> {
     
     // Implementasi navigasi ke halaman lain sesuai item yang dipilih
     if (index == 1) {
-      // Navigator.push(context, MaterialPageRoute(builder: (context) => MonitoringPage()));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => Monitoring()));
     } else if (index == 2) {
-      // Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage()));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
     }
   }
   

@@ -22,6 +22,7 @@ abstract class AuthRepositories {
   // Metode manajemen profil
   Future<FirebaseUserEntity?> updateUserProfile({String? displayName, String? photoURL});
   Future<void> updatePassword(String newPassword);
+  Future<void> updateEmail(String newEmail, {required String password});
   
   // Metode mendapatkan data pengguna
   FirebaseUserEntity? getCurrentUser();
@@ -41,4 +42,6 @@ abstract class AuthRepositories {
   Future<bool> authenticateWithBiometrics();
   Future<void> enableBiometricLogin(String email, String password);
   Future<FirebaseUserEntity?> signInWithBiometrics();
+  Future<bool> isBiometricLoginEnabled();
+  Future<void> disableBiometricLogin();
 }
