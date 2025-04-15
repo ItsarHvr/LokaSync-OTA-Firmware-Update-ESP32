@@ -1,7 +1,9 @@
-.gitignore
-
 # Vscode artifact
 .vscode/
+
+# Don't expose the secret.
+lib/firebase_options.dart
+firebase.json
 
 # Miscellaneous
 *.class
