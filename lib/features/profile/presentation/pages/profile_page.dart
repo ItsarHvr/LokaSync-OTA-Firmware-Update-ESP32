@@ -4,6 +4,7 @@ import 'package:elegant_notification/elegant_notification.dart';
 import 'package:elegant_notification/resources/arrays.dart';
 import 'package:lokasync/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:lokasync/features/auth/domain/entities/user_entity.dart';
+import 'package:lokasync/presentation/widgets/bottom_navbar.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -25,11 +26,24 @@ class _ProfileState extends State<Profile> {
   bool _isLoading = false;
   // bool _isPasswordVisible = false;
   FirebaseUserEntity? _currentUser;
+  final int _currentIndex = 2; // Set index 2 for profile tab
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+  }
+
+  // Method untuk menangani navigasi bottom bar
+  void _onItemTapped(int index) {
+    if (index == _currentIndex) return; // Avoid unnecessary navigation if already on this tab
+    
+    if (index == 0) {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else if (index == 1) {
+      Navigator.pushReplacementNamed(context, '/monitoring');
+    }
+    // No need to handle index 2 (profile) as we're already here
   }
 
   @override
@@ -280,6 +294,10 @@ class _ProfileState extends State<Profile> {
                 ),
               ),
             ),
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: _onItemTapped,
+      ),
     );
   }
 
