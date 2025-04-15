@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "296678093681",
+    "project_id": "lokasync",
+    "storage_bucket": "lokasync.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:296678093681:android:591bd0cbd1fc1e5b263cd0",
+        "android_client_info": {
+          "package_name": "com.lokatani.lokasync"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "296678093681-u2t0hks2p5dqh3t5gp6rlhcdt5ote52c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7qkkE11sXZSnEWlfuxs96Cp2nwWp9Chk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "296678093681-u2t0hks2p5dqh3t5gp6rlhcdt5ote52c.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "296678093681-du9dc0jkcethbjgbnk125tmb8l8qmrde.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.lokatani.lokasync"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
