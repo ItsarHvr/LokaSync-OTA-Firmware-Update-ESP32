@@ -8,7 +8,11 @@
 PRODUCT_NAME = lokasync
 
 // The application's bundle identifier
+<<<<<<< HEAD
 PRODUCT_BUNDLE_IDENTIFIER = com.lokatani.lokasync
+=======
+PRODUCT_BUNDLE_IDENTIFIER = com.example.lokasync
+>>>>>>> origin/android-dev
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.

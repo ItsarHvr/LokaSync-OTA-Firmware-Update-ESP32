@@ -1,5 +1,8 @@
 .gitignore
 
+# Vscode artifact
+.vscode/
+
 # Miscellaneous
 *.class
 *.log
