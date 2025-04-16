@@ -295,28 +295,14 @@ class _MonitoringState extends State<Monitoring> {
                 InkWell(
                   onTap: () => Navigator.pushReplacementNamed(context, '/home'),
                   borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.shade200,
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(Icons.arrow_back, color: Color(0xFF014331)),
-                  ),
+                  child: const Icon(Icons.arrow_back, color: Color(0xFF014331), size: 24),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 32), // Increased from 16 to 32 for more spacing
                 // Title now placed beside the back button
                 Text(
                   'Monitoring Page',
                   style: GoogleFonts.poppins(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF014331),
                   ),
