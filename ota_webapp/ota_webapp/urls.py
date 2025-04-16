@@ -16,13 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.http import HttpResponse
-
-def home(request):
-    return HttpResponse("Welcome to the OTA Web App!")
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/auth/', include('ota_app.urls')),
-    path('', home),  # Add this line for root URL
+    path('accounts/', include('ota_app.urls')),
+    path('dashboard/', include('dashboard.urls')),
+    path('', RedirectView.as_view(url='accounts/login/', permanent=False)),
 ]

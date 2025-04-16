@@ -1,29 +1,34 @@
-from django.shortcuts import render
-from django.contrib.auth import authenticate
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.decorators import api_view
-from rest_framework.authtoken.models import Token
-from .models import CustomUser
-from .serializers import CustomUserSerializer
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from .forms import RegistrationForm
 
-# Create your views here.
-@api_view(['POST'])
-def register(request):
-    serializer = CustomUserSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save()
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key, 'user':serializer.data}, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        remember = request.POST.get('remember')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            if not remember:
+                request.session.set_expiry(0)  # Session expires when browser closes
+            return redirect('dashboard')
+        else:
+            messages.error(request, 'Invalid username or password')
+    
+    return render(request, 'login.html')
 
-@api_view(['POST'])
-def login(request):
-    email = request.data.get('email')
-    password = request.data.get('password')
-    user = authenticate(email=email, password=password)
-    if user:
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key}, status=status.HTTP_200_OK)
-    return Response({'error': 'Invalid Credentials'}, status=status.HTTP_400_BAD_REQUEST)
-
+def register_view(request):
+    if request.method == 'POST':
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, 'Account created successfully! You can now log in.')
+            return redirect('login')
+    else:
+        form = RegistrationForm()
+    
+    return render(request, 'register.html', {'form': form})
