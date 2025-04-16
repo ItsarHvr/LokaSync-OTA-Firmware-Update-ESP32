@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokasync/presentation/widgets/bottom_navbar.dart';
 import 'dart:math';
+import 'package:fl_chart/fl_chart.dart';
 
 // Models
 class SensorData {
@@ -233,6 +234,25 @@ class _MonitoringState extends State<Monitoring> {
     }
   }
 
+  // Data for charts (random data for demonstration)
+  List<FlSpot> _generateChartData(SensorData sensor) {
+    final random = Random();
+    final spots = <FlSpot>[];
+    // Generate data for the last hour (12 data points, 5 min interval)
+    for (int i = 0; i < 12; i++) {
+      // Base value is the current sensor value
+      double baseValue = sensor.value;
+      // Add some random fluctuation (±10% of the value)
+      double fluctuation = (random.nextDouble() * 0.2 - 0.1) * baseValue;
+      double value = (baseValue + fluctuation).clamp(0, double.infinity);
+      
+      // X-axis: time in minutes (60 minutes ago to now)
+      double x = i * 5.0; // 5-minute intervals
+      spots.add(FlSpot(x, value));
+    }
+    return spots;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -265,9 +285,9 @@ class _MonitoringState extends State<Monitoring> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min, // Mengatur ukuran minimal untuk menghindari overflow
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Header with back button and node selector
+          // Header with back button and title
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             child: Row(
@@ -292,22 +312,23 @@ class _MonitoringState extends State<Monitoring> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Expanded(child: _buildNodeDropdown()),
+                // Title now placed beside the back button
+                Text(
+                  'Monitoring Page',
+                  style: GoogleFonts.poppins(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF014331),
+                  ),
+                ),
               ],
             ),
           ),
           
-          // Title
+          // Node selector dropdown (now below title and back button)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Text(
-              'Monitoring ${node?.name ?? ""}',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF014331),
-              ),
-            ),
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: _buildNodeDropdown(),
           ),
           
           // Sensor cards - scrollable horizontally
@@ -335,7 +356,7 @@ class _MonitoringState extends State<Monitoring> {
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0), // Tambahkan padding bottom untuk menghindari overflow
+                  padding: const EdgeInsets.only(bottom: 16.0),
                   child: _buildSensorVisualization(_selectedSensor!),
                 ),
               ),
@@ -419,7 +440,12 @@ class _MonitoringState extends State<Monitoring> {
               ? LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [sensor.color, sensor.color.withAlpha(179)],
+                  colors: [
+                    sensor.color, 
+                    HSLColor.fromColor(sensor.color)
+                        .withLightness(HSLColor.fromColor(sensor.color).lightness * 0.7)
+                        .toColor()
+                  ],
                 )
               : null,
           color: isSelected ? null : Colors.white,
@@ -427,7 +453,9 @@ class _MonitoringState extends State<Monitoring> {
           boxShadow: [
             BoxShadow(
               color: isSelected 
-                  ? sensor.color.withAlpha(77)
+                  ? HSLColor.fromColor(sensor.color)
+                        .withLightness(HSLColor.fromColor(sensor.color).lightness * 0.3)
+                        .toColor()
                   : Colors.grey.shade200,
               blurRadius: 6,
               spreadRadius: 1,
@@ -490,204 +518,169 @@ class _MonitoringState extends State<Monitoring> {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'Nilai ${sensor.name} Saat Ini',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF014331),
-            ),
-          ),
-          const SizedBox(height: 24),
-          
-          // Visualisasi sesuai jenis sensor
-          if (sensor.name == 'Suhu')
-            _buildTemperatureVisualization(sensor)
-          else if (sensor.name == 'Kelembaban' || sensor.name == 'TDS')
-            _buildCircularVisualization(sensor)
-          else
-            Text(
-              '${sensor.value} ${sensor.unit}',
+          // Chart title
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Text(
+              'Data dalam 1 jam terakhir',
               style: GoogleFonts.poppins(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: sensor.color,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade700,
               ),
             ),
+          ),
+          
+          // Chart visualization
+          SizedBox(
+            height: 250,
+            child: _buildSensorChart(sensor),
+          ),
         ],
       ),
     );
   }
   
-  // Widget visualisasi suhu berbentuk persegi panjang dengan fill dari bawah
-  Widget _buildTemperatureVisualization(SensorData sensor) {
-    // Nilai suhu dibatasi antara 0-100 derajat Celcius
-    final double fillPercentage = (sensor.value / 100).clamp(0.0, 1.0);
+  // New chart visualization widgets
+  Widget _buildSensorChart(SensorData sensor) {
+    final chartData = _generateChartData(sensor);
+    final minY = chartData.map((spot) => spot.y).reduce(min) * 0.9;
+    final maxY = chartData.map((spot) => spot.y).reduce(max) * 1.1;
     
-    return Container(
-      height: 250,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Container luar (background) dengan border lebih tebal dan gelap
-          Container(
-            width: 70,
-            height: 200,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade600, width: 2),
-            ),
+    return Padding(
+      padding: const EdgeInsets.only(right: 16, left: 0, top: 16, bottom: 12),
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: true,
+            horizontalInterval: maxY / 5,
+            verticalInterval: 10,
+            getDrawingHorizontalLine: (value) {
+              return FlLine(
+                color: Colors.grey.shade200,
+                strokeWidth: 1,
+              );
+            },
+            getDrawingVerticalLine: (value) {
+              return FlLine(
+                color: Colors.grey.shade200,
+                strokeWidth: 1,
+              );
+            },
           ),
-          
-          // Fill suhu (dari bawah ke atas) - pastikan height tidak melebihi container luar
-          Positioned(
-            bottom: 25, // Adjusted to be inside the container
-            child: ClipRRect(
-              borderRadius: BorderRadius.only(
-                bottomLeft: const Radius.circular(6),
-                bottomRight: const Radius.circular(6),
-                topLeft: fillPercentage == 1.0 ? const Radius.circular(6) : Radius.zero,
-                topRight: fillPercentage == 1.0 ? const Radius.circular(6) : Radius.zero,
-              ),
-              child: Container(
-                width: 66, // Slightly smaller than outer container
-                height: min(150 * fillPercentage, 150), // Ensure it stays within bounds
-                color: sensor.color.withOpacity(0.7),
-                // Nilai suhu sebagai teks putih di tengah fill area
-                child: Center(
-                  child: Text(
-                    "${(fillPercentage * 100).toInt()}%",
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withOpacity(0.5),
-                          blurRadius: 3,
-                          offset: const Offset(0, 1),
+          titlesData: FlTitlesData(
+            show: true,
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: 10, // 10 minute intervals
+                getTitlesWidget: (value, meta) {
+                  int minutes = 60 - value.toInt();
+                  if (minutes % 10 == 0 || minutes == 0 || minutes == 60) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        minutes == 0 ? 'now' : '$minutes min',
+                        style: GoogleFonts.poppins(
+                          color: Colors.grey.shade600,
+                          fontSize: 10,
                         ),
-                      ],
+                      ),
+                    );
+                  }
+                  return const SizedBox();
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: (maxY - minY) / 4,
+                getTitlesWidget: (value, meta) {
+                  // Only show a reasonable number of decimal places
+                  String displayValue = value.toStringAsFixed(
+                    sensor.unit == '°C' || sensor.unit == '%' ? 1 : 0
+                  );
+                  return Text(
+                    displayValue,
+                    style: GoogleFonts.poppins(
+                      color: Colors.grey.shade600,
+                      fontSize: 10,
                     ),
-                  ),
-                ),
+                  );
+                },
+                reservedSize: 40,
               ),
             ),
           ),
-        ],
+          borderData: FlBorderData(
+            show: true,
+            border: Border(
+              bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+              left: BorderSide(color: Colors.grey.shade300, width: 1),
+            ),
+          ),
+          minX: 0,
+          maxX: 60, // 60 minutes
+          minY: minY,
+          maxY: maxY,
+          lineBarsData: [
+            LineChartBarData(
+              spots: chartData.map((spot) => 
+                FlSpot(60 - spot.x, spot.y) // Reverse x-axis (60 min ago to now)
+              ).toList(),
+              isCurved: true,
+              color: sensor.color,
+              barWidth: 3,
+              isStrokeCapRound: true,
+              dotData: const FlDotData(
+                show: false,
+              ),
+              belowBarData: BarAreaData(
+                show: true,
+                color: HSLColor.fromColor(sensor.color)
+                    .withAlpha(0.2)
+                    .toColor(),
+              ),
+            ),
+          ],
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              tooltipRoundedRadius: 8,
+              getTooltipColor: (LineBarSpot touchedSpot) {
+                return HSLColor.fromColor(Colors.white)
+                    .withAlpha(0.8)
+                    .toColor();
+              },
+              getTooltipItems: (List<LineBarSpot> touchedSpots) {
+                return touchedSpots.map((LineBarSpot touchedSpot) {
+                  // Calculate time (x-axis is inverted)
+                  int minutesAgo = (60 - touchedSpot.x).round();
+                  String timeText = minutesAgo == 0 
+                      ? 'now' 
+                      : '$minutesAgo min ago';
+                  
+                  return LineTooltipItem(
+                    '${touchedSpot.y.toStringAsFixed(1)} ${sensor.unit}\n$timeText',
+                    GoogleFonts.poppins(
+                      color: sensor.color,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                }).toList();
+              },
+            ),
+          ),
+        ),
       ),
     );
   }
-  
-  // Widget visualisasi lingkaran untuk kelembaban dan TDS
-  Widget _buildCircularVisualization(SensorData sensor) {
-    // Tentukan nilai maksimum berdasarkan jenis sensor
-    final double maxValue = sensor.name == 'Kelembaban' ? 100.0 : 1000.0;
-    final double fillPercentage = (sensor.value / maxValue).clamp(0.0, 1.0);
-    
-    return SizedBox(
-      height: 220,
-      width: 220,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Progress background
-          Container(
-            width: 200,
-            height: 200,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: sensor.color.withAlpha(30),
-            ),
-          ),
-          
-          // Progress indicator
-          CustomPaint(
-            size: const Size(200, 200),
-            painter: CircularProgressPainter(
-              progress: fillPercentage,
-              progressColor: sensor.color,
-              strokeWidth: 15.0,
-            ),
-          ),
-          
-          // Value in center
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                sensor.value.toStringAsFixed(1),
-                style: GoogleFonts.poppins(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: sensor.color,
-                ),
-              ),
-              Text(
-                sensor.unit,
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black54,
-                ),
-              ),
-            ],
-          ),
-          
-          // Small indicator dot at top
-          Positioned(
-            top: 10,
-            child: Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: sensor.color,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Custom painter untuk progress arc
-class CircularProgressPainter extends CustomPainter {
-  final double progress;
-  final Color progressColor;
-  final double strokeWidth;
-  
-  CircularProgressPainter({
-    required this.progress,
-    required this.progressColor,
-    this.strokeWidth = 8.0,
-  });
-  
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    const startAngle = -90 * (3.14 / 180); // -90 degrees in radians
-    final sweepAngle = 2 * 3.14 * progress;
-    
-    final paint = Paint()
-      ..color = progressColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-    
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius - paint.strokeWidth / 2),
-      startAngle,
-      sweepAngle,
-      false,
-      paint,
-    );
-  }
-  
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
