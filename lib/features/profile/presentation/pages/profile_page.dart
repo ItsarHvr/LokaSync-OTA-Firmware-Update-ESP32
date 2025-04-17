@@ -346,17 +346,17 @@ class _ProfileState extends State<Profile> {
           ),
           const SizedBox(height: 16),
           
-          // User name
+          // User Fullname
           Text(
             _currentUser?.fullName ?? 'User',
             style: GoogleFonts.poppins(
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: const Color(0xFF014331),
             ),
           ),
           
-          // Email
+          // User email
           Text(
             _currentUser?.email ?? 'email@example.com',
             style: GoogleFonts.poppins(
