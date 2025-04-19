@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokasync/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:sign_in_button/sign_in_button.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -210,127 +209,6 @@ class _RegisterState extends State<Register> {
     }
   }
   
-  // Handle registration with Google
-  Future<void> _handleGoogleSignUp() async {
-    if (!_agreeToTerms) {
-      // debugPrint("DEBUG: Terms not agreed for Google Sign Up");
-      ElegantNotification.info(
-        title: const Text("Perhatian"),
-        description: const Text("Anda harus menyetujui syarat dan ketentuan untuk melanjutkan."),
-        animation: AnimationType.fromTop,
-        position: Alignment.topRight,
-      ).show(context);
-      return;
-    }
-    
-    setState(() {
-      _isLoading = true;
-    });
-    
-    // debugPrint("DEBUG: Mulai proses registrasi dengan Google");
-    
-    try {
-      // debugPrint("DEBUG: Memanggil signInWithGoogle");
-      final user = await _authController.signInWithGoogle();
-      
-      // debugPrint("DEBUG: Google Sign In selesai, hasil: ${user != null ? 'sukses' : 'gagal'}");
-      
-      // Pemeriksaan mounted kritis setelah operasi asinkron
-      if (!mounted) {
-        // debugPrint("DEBUG: Widget tidak mounted setelah signInWithGoogle");
-        return;
-      }
-      
-      if (user != null) {
-        // debugPrint("DEBUG: Login Google berhasil, menampilkan notifikasi");
-        
-        // Gunakan WidgetsBinding untuk memastikan notifikasi ditampilkan
-        // PERBAIKAN: Hapus autoDismiss: false
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.success(
-            title: const Text("Registrasi Berhasil!"),
-            description: const Text("Akun Google Anda berhasil terdaftar."),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
-        
-        // Reset loading state sebelum navigasi
-        setState(() {
-          _isLoading = false;
-        });
-        
-        // Navigasi ke halaman home
-        // debugPrint("DEBUG: Delay sebelum navigasi ke home");
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            // debugPrint("DEBUG: Navigasi ke home page");
-            Navigator.pushReplacementNamed(context, '/home');
-          }
-        });
-      } else {
-        // Handle kasus user null
-        // debugPrint("DEBUG: User null setelah Google Sign In");
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-          
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ElegantNotification.error(
-              title: const Text("Registrasi Gagal"),
-              description: const Text("Gagal mendaftar dengan Google. Silakan coba lagi."),
-              animation: AnimationType.fromTop,
-              position: Alignment.topRight,
-            ).show(context);
-          });
-        }
-      }
-    } on FirebaseAuthException catch (e) {
-      // debugPrint("DEBUG: FirebaseAuthException dalam Google Sign In: ${e.code} - ${e.message}");
-      
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.error(
-            title: const Text("Registrasi Gagal!"),
-            description: Text(_getFirebaseErrorMessage(e.code)),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
-      }
-    } catch (e) {
-      // debugPrint("DEBUG: Exception umum dalam Google Sign In: ${e.toString()}");
-      
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.error(
-            title: const Text("Error"),
-            description: Text("Terjadi kesalahan: ${e.toString()}"),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
-      }
-    } finally {
-      // Pastikan loading dihentikan dalam semua kasus
-      // debugPrint("DEBUG: Menjalankan finally block dalam Google Sign In");
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-  
   // Helper untuk mendapatkan pesan error yang user-friendly
   String _getFirebaseErrorMessage(String errorCode) {
     switch (errorCode) {
@@ -344,12 +222,6 @@ class _RegisterState extends State<Register> {
         return 'Password terlalu lemah. Gunakan minimal 8 karakter.';
       case 'network-request-failed':
         return 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
-      case 'account-exists-with-different-credential':
-        return 'Email sudah digunakan dengan metode login lain.';
-      case 'invalid-credential':
-        return 'Kredensial tidak valid. Silakan coba lagi.';
-      case 'google-signin-failed':
-        return 'Gagal login dengan Google. Silakan coba lagi.';
       default:
         return 'Terjadi kesalahan: $errorCode.';
     }
@@ -684,19 +556,6 @@ class _RegisterState extends State<Register> {
                       ),
                       const Expanded(child: Divider(thickness: 1)),
                     ],
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Google Sign Up Button
-                  SignInButton(
-                    Buttons.google,
-                    onPressed: _isLoading 
-                      ? () {} // Fungsi kosong saat loading
-                      : _handleGoogleSignUp,
-                    text: 'Daftar dengan Google',
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
                   const SizedBox(height: 20),
                   

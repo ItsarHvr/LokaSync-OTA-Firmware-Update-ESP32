@@ -17,6 +17,8 @@ class _HomeState extends State<Home> {
   int _currentIndex = 0;
   String _filterActive = 'all';
   bool _isLoading = false;
+  bool _isInitialized = false;
+  String? _errorMessage;
   
   // Data statistik (nantinya akan diambil dari API)
   final Map<String, int> _statistics = {
@@ -31,57 +33,120 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _loadActivities('all');
+    // Use a microtask to ensure the widget is fully mounted before loading data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeHomeData();
+    });
+  }
+  
+  // Initialize all home data with error handling
+  Future<void> _initializeHomeData() async {
+    try {
+      if (!mounted) return;
+      
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+      
+      // Check if the user is authenticated
+      final user = _authController.getCurrentUser();
+      if (user == null) {
+        // Handle case where user is not properly authenticated
+        setState(() {
+          _errorMessage = "User authentication issue. Please login again.";
+          _isLoading = false;
+        });
+        
+        // Navigate back to login after a brief delay
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed('/login');
+          }
+        });
+        return;
+      }
+      
+      // Load activities once we confirm user is authenticated
+      await _loadActivities('all');
+      
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = "Failed to load data: ${e.toString()}";
+          _isLoading = false;
+        });
+      }
+    }
   }
   
   // Method untuk memuat aktivitas berdasarkan filter
   Future<void> _loadActivities(String filter) async {
-    setState(() {
-      _isLoading = true;
-      _filterActive = filter;
-    });
-    
-    // Simulasi loading dari API
-    await Future.delayed(const Duration(seconds: 1));
-    
-    // Contoh data dummy (nantinya akan diganti dengan request ke API)
-    List<Map<String, dynamic>> dummyData = [];
-    
-    if (filter == 'all' || filter == 'success') {
-      dummyData.addAll([
-        {
-          'id': '001',
-          'title': 'Monitoring Suhu',
-          'timestamp': DateTime.now().subtract(const Duration(hours: 2)),
-          'status': 'success',
-          'value': '28°C',
-        },
-        {
-          'id': '002',
-          'title': 'Monitoring Kelembaban',
-          'timestamp': DateTime.now().subtract(const Duration(hours: 4)),
-          'status': 'success',
-          'value': '75%',
-        },
-      ]);
+    try {
+      if (!mounted) return;
+      
+      setState(() {
+        _isLoading = true;
+        _filterActive = filter;
+      });
+      
+      // Simulasi loading dari API
+      await Future.delayed(const Duration(seconds: 1));
+      
+      // Contoh data dummy (nantinya akan diganti dengan request ke API)
+      List<Map<String, dynamic>> dummyData = [];
+      
+      if (filter == 'all' || filter == 'success') {
+        dummyData.addAll([
+          {
+            'id': '001',
+            'title': 'Monitoring Suhu',
+            'timestamp': DateTime.now().subtract(const Duration(hours: 2)),
+            'status': 'success',
+            'value': '28°C',
+          },
+          {
+            'id': '002',
+            'title': 'Monitoring Kelembaban',
+            'timestamp': DateTime.now().subtract(const Duration(hours: 4)),
+            'status': 'success',
+            'value': '75%',
+          },
+        ]);
+      }
+      
+      if (filter == 'all' || filter == 'failed') {
+        dummyData.addAll([
+          {
+            'id': '003',
+            'title': 'Monitoring pH Tanah',
+            'timestamp': DateTime.now().subtract(const Duration(hours: 6)),
+            'status': 'failed',
+            'errorMsg': 'Sensor tidak terhubung',
+          },
+        ]);
+      }
+      
+      if (!mounted) return;
+      
+      setState(() {
+        _activities = dummyData;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = "Failed to load activities: ${e.toString()}";
+          _isLoading = false;
+        });
+      }
     }
-    
-    if (filter == 'all' || filter == 'failed') {
-      dummyData.addAll([
-        {
-          'id': '003',
-          'title': 'Monitoring pH Tanah',
-          'timestamp': DateTime.now().subtract(const Duration(hours: 6)),
-          'status': 'failed',
-          'errorMsg': 'Sensor tidak terhubung',
-        },
-      ]);
-    }
-    
-    setState(() {
-      _activities = dummyData;
-      _isLoading = false;
-    });
   }
   
   // Mendapatkan nama depan pengguna
@@ -109,6 +174,80 @@ class _HomeState extends State<Home> {
   
   @override
   Widget build(BuildContext context) {
+    // If there's an error, show error state
+    if (_errorMessage != null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF5F7F9),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.red,
+                size: 60,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Error',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                child: Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _errorMessage = null;
+                  });
+                  _initializeHomeData();
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    // If still loading and not initialized, show a proper loading screen
+    if (_isLoading && !_isInitialized) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF5F7F9),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(
+                color: Color(0xFF014331),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Loading LokaSync data...',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    // Regular home screen UI once initialized
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7F9),
       body: SafeArea(
@@ -145,7 +284,7 @@ class _HomeState extends State<Home> {
                   GestureDetector(
                     onTap: () {
                       // Navigate to profile
-                      // Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage()));
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
                     },
                     child: CircleAvatar(
                       backgroundColor: const Color(0xFF014331),
@@ -417,7 +556,7 @@ class _HomeState extends State<Home> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${_formatDateTime(activity['timestamp'])}',
+                    _formatDateTime(activity['timestamp']),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade500,
@@ -434,6 +573,6 @@ class _HomeState extends State<Home> {
   
   // Helper untuk format tanggal
   String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }

@@ -9,9 +9,6 @@ abstract class AuthRepositories {
   Future<FirebaseUserEntity?> signInWithEmailAndPassword(String email, String password);
   Future<FirebaseUserEntity?> signInWithCredential(AuthCredential credential);
   
-  // Metode autentikasi sosial media
-  Future<FirebaseUserEntity?> signInWithGoogle();
-  
   // Metode registrasi
   Future<FirebaseUserEntity?> registerWithEmailAndPassword(String email, String password, String fullName);
   
@@ -37,11 +34,12 @@ abstract class AuthRepositories {
   // Metode reauthentication (diperlukan untuk operasi sensitif)
   Future<bool> reauthenticateUser(String password);
 
-  // Metode untuk autentikasi biometrik
+  // Metode untuk autentikasi biometrik (hanya fingerprint)
   Future<bool> isBiometricAvailable();
   Future<bool> authenticateWithBiometrics();
   Future<void> enableBiometricLogin(String email, String password);
   Future<FirebaseUserEntity?> signInWithBiometrics();
   Future<bool> isBiometricLoginEnabled();
   Future<void> disableBiometricLogin();
+  Future<FirebaseUserEntity?> signInWithStoredCredentials();
 }

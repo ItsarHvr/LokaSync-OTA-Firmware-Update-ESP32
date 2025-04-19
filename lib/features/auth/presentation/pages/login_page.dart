@@ -3,11 +3,15 @@ import 'package:elegant_notification/resources/arrays.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sign_in_button/sign_in_button.dart';
 import 'package:lokasync/features/auth/presentation/controllers/auth_controller.dart';
 
 class Login extends StatefulWidget {
-  const Login({super.key});
+  final bool showBiometricPrompt;
+  
+  const Login({
+    super.key, 
+    this.showBiometricPrompt = false,
+  });
 
   @override
   State<Login> createState() => _LoginState();
@@ -28,6 +32,15 @@ class _LoginState extends State<Login> {
     super.initState();
     _checkBiometricAvailability();
     _checkIfUserIsLoggedIn();
+    
+    // Show biometric dialog if requested after a short delay
+    if (widget.showBiometricPrompt) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && _isBiometricAvailable) {
+          _showBiometricDialog();
+        }
+      });
+    }
   }
 
   Future<void> _checkBiometricAvailability() async {
@@ -64,52 +77,34 @@ class _LoginState extends State<Login> {
       _isLoading = true;
     });
     
-    // debugPrint("DEBUG: Mulai proses login dengan email/password");
-    
     try {
       final user = await _authController.signInWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
       
-      // debugPrint("DEBUG: Login selesai, hasil: ${user != null ? 'sukses' : 'gagal'}");
-      
-      // Penting: Periksa mounted setelah operasi async
-      if (!mounted) {
-        // debugPrint("DEBUG: Widget tidak mounted setelah signInWithEmailAndPassword");
-        return;
-      }
+      if (!mounted) return;
       
       if (user != null) {
-        // debugPrint("DEBUG: Login berhasil, menampilkan notifikasi");
-        
-        // Gunakan WidgetsBinding untuk memastikan notifikasi ditampilkan
-        // PERBAIKAN: Hapus parameter autoDismiss: false atau set ke true
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ElegantNotification.success(
             title: const Text("Login Berhasil!"),
-            description: Text("Selamat datang kembali ${user.fullName.isNotEmpty ? ', ${user.fullName}' : ''}!"),
+            description: Text("Selamat datang kembali${user.fullName.isNotEmpty ? ', ${user.fullName}' : ''}!"),
             animation: AnimationType.fromTop,
             position: Alignment.topRight,
-            // autoDismiss parameter dihapus karena default-nya adalah true
           ).show(context);
         });
         
-        // Reset state loading
         setState(() {
           _isLoading = false;
         });
         
-        // Navigate to home page
-        // debugPrint("DEBUG: Delay sebelum navigasi ke home");
         Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) {
-            // debugPrint("DEBUG: Navigasi ke home page");
             Navigator.pushReplacementNamed(context, '/home');
           }
         });
       } else {
-        // debugPrint("DEBUG: User null setelah login");
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -121,15 +116,11 @@ class _LoginState extends State<Login> {
               description: const Text("Terjadi kesalahan saat login. Silahkan Coba lagi nanti."),
               animation: AnimationType.fromTop,
               position: Alignment.topRight,
-              // autoDismiss parameter dihapus
             ).show(context);
           });
         }
       }
     } on FirebaseAuthException catch (e) {
-      // debugPrint("DEBUG: FirebaseAuthException: ${e.code} - ${e.message}");
-      
-      // Handle specific Firebase Auth exceptions
       String errorMessage = _getFirebaseErrorMessage(e.code);
       
       if (mounted) {
@@ -143,14 +134,10 @@ class _LoginState extends State<Login> {
             description: Text(errorMessage),
             animation: AnimationType.fromTop,
             position: Alignment.topRight,
-            // autoDismiss parameter dihapus
           ).show(context);
         });
       }
     } catch (e) {
-      // debugPrint("DEBUG: Exception umum: ${e.toString()}");
-      
-      // Handle general exceptions
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -162,154 +149,123 @@ class _LoginState extends State<Login> {
             description: Text("Terjadi kesalahan: ${e.toString()}."),
             animation: AnimationType.fromTop,
             position: Alignment.topRight,
-            // autoDismiss parameter dihapus
           ).show(context);
         });
       }
     }
   }
 
-  // Handle login with Google
-  Future<void> _handleGoogleSignIn() async {
+  // Show biometric authentication dialog
+  Future<void> _showBiometricDialog() async {
+    if (!_isBiometricAvailable) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Biometric login is not available or not enabled')),
+        );
+      }
+      return;
+    }
+    
+    // Langsung trigger biometric authentication tanpa bottom sheet
+    await _triggerBiometricAuth();
+  }
+  
+  // Directly trigger the OS biometric authentication
+  Future<void> _triggerBiometricAuth() async {
     setState(() {
       _isLoading = true;
     });
     
-    // debugPrint("DEBUG: Mulai proses login dengan Google");
-    
     try {
-      // debugPrint("DEBUG: Memanggil signInWithGoogle");
-      final user = await _authController.signInWithGoogle();
+      debugPrint('BIOMETRIC_AUTH: Starting biometric authentication flow');
       
-      // debugPrint("DEBUG: Google Sign In selesai, hasil: ${user != null ? 'sukses' : 'gagal'}");
+      // Show a snackbar to make it clear that we're waiting for fingerprint
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please scan your fingerprint'),
+          duration: Duration(seconds: 2),
+        ),
+      );
       
-      // Pemeriksaan mounted kritis setelah operasi asinkron
-      if (!mounted) {
-        // debugPrint("DEBUG: Widget tidak mounted setelah signInWithGoogle");
-        return;
-      }
+      // First authenticate with biometrics at the OS level
+      debugPrint('BIOMETRIC_AUTH: Calling authenticateWithBiometrics()');
+      final authenticated = await _authController.authenticateWithBiometrics();
+      debugPrint('BIOMETRIC_AUTH: Authentication result: $authenticated');
       
-      if (user != null) {
-        // debugPrint("DEBUG: Login Google berhasil, menampilkan notifikasi");
-        
-        // Gunakan WidgetsBinding untuk memastikan notifikasi ditampilkan dengan benar
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.success(
-            title: const Text("Login Berhasil!"),
-            description: Text("Berhasil login dengan Google."),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
-        
-        // Reset loading state sebelum navigasi
-        setState(() {
-          _isLoading = false;
-        });
-        
-        // Navigasi ke halaman home
-        // debugPrint("DEBUG: Delay sebelum navigasi ke home");
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          if (mounted) {
-            // debugPrint("DEBUG: Navigasi ke home page");
-            Navigator.pushReplacementNamed(context, '/home');
-          }
-        });
-      } else {
-        // Handle kasus user null
-        // debugPrint("DEBUG: User null setelah Google Sign In");
+      if (!authenticated) {
         if (mounted) {
           setState(() {
             _isLoading = false;
           });
-          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Biometric authentication failed or cancelled'),
+            ),
+          );
+        }
+        return;
+      }
+      
+      // Skip the second biometric check by accessing stored credentials directly
+      debugPrint('BIOMETRIC_AUTH: Authentication successful, attempting to sign in with stored credentials');
+      
+      try {
+        final user = await _authController.signInWithStoredCredentials();
+        debugPrint('BIOMETRIC_AUTH: Sign-in result: ${user != null ? 'Success' : 'Failed'}');
+        
+        if (!mounted) return;
+        
+        if (user != null) {
+          // Show success notification
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            ElegantNotification.error(
-              title: const Text("Login Gagal"),
-              description: const Text("Gagal login dengan Google. Silakan coba lagi."),
+            ElegantNotification.success(
+              title: const Text("Login Berhasil!"),
+              description: Text("Selamat datang kembali${user.fullName.isNotEmpty ? ', ${user.fullName}' : ''}!"),
               animation: AnimationType.fromTop,
               position: Alignment.topRight,
+              autoDismiss: true,
             ).show(context);
           });
+          
+          // Navigate to home page
+          Future.delayed(const Duration(milliseconds: 1500), () {
+            if (mounted) {
+              Navigator.pushReplacementNamed(context, '/home');
+            }
+          });
+        }
+      } catch (credentialError) {
+        debugPrint('BIOMETRIC_AUTH: Credential error: ${credentialError.toString()}');
+        
+        if (!mounted) return;
+        
+        // Disable biometric login if credentials are invalid
+        if (credentialError.toString().contains('invalid') || 
+            credentialError.toString().contains('no longer valid')) {
+          
+          await _authController.disableBiometricLogin();
+          
+          ElegantNotification.error(
+            title: const Text("Fingerprint Login Failed"),
+            description: const Text("Your saved credentials are no longer valid. Please login with email and password, then re-enable fingerprint login."),
+            animation: AnimationType.fromTop,
+            position: Alignment.topRight,
+          ).show(context);
+        } else {
+          ElegantNotification.error(
+            title: const Text("Fingerprint Login Failed"),
+            description: Text("Error: ${credentialError.toString()}"),
+            animation: AnimationType.fromTop,
+            position: Alignment.topRight,
+          ).show(context);
         }
       }
-    } on FirebaseAuthException catch (e) {
-      // debugPrint("DEBUG: FirebaseAuthException dalam Google Sign In: ${e.code} - ${e.message}");
-      
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.error(
-            title: const Text("Login Gagal!"),
-            description: Text(_getFirebaseErrorMessage(e.code)),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
-      }
     } catch (e) {
-      // debugPrint("DEBUG: Exception umum dalam Google Sign In: ${e.toString()}");
-      
+      debugPrint('BIOMETRIC_AUTH: Error: ${e.toString()}');
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.error(
-            title: const Text("Error"),
-            description: Text("Terjadi kesalahan: ${e.toString()}"),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
-      }
-    } finally {
-      // Pastikan loading dihentikan dalam semua kasus
-      // debugPrint("DEBUG: Menjalankan finally block dalam Google Sign In");
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  // Handle login with biometric
-  Future<void> _handleBiometricLogin() async {
-    setState(() {
-      _isLoading = true;
-    });
-    
-    try {
-      final user = await _authController.signInWithBiometrics();
-      
-      if (!mounted) return;
-      
-      if (user != null) {
-        // Show success notification
-        ElegantNotification.success(
-          title: const Text("Login Berhasil!"),
-          description: Text("Autentikasi biometrik berhasil"),
-          animation: AnimationType.fromTop,
-          position: Alignment.topRight,
-          autoDismiss: true,
-        ).show(context);
-        
-        // Navigate to home page
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          if (mounted) {
-            Navigator.pushReplacementNamed(context, '/home');
-          }
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        // Don't show error if user cancelled biometric auth
-        if (e.toString().contains('User canceled biometric')) {
+        // Don't show error if user canceled biometric auth
+        if (e.toString().contains('User canceled biometric') || 
+            e.toString().contains('user canceled')) {
           setState(() {
             _isLoading = false;
           });
@@ -317,11 +273,10 @@ class _LoginState extends State<Login> {
         }
         
         ElegantNotification.error(
-          title: const Text("Gagal Login dengan Biometrik!"),
-          description: Text("Terjadi kesalahan: ${e.toString()}."),
+          title: const Text("Gagal Login dengan Biometrik"),
+          description: Text("Terjadi kesalahan: ${e.toString()}"),
           animation: AnimationType.fromTop,
           position: Alignment.topRight,
-          autoDismiss: false,
         ).show(context);
       }
     } finally {
@@ -358,8 +313,6 @@ class _LoginState extends State<Login> {
         return 'Password terlalu lemah. Gunakan minimal 8 karakter.';
       case 'network-request-failed':
         return 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
-      case 'google-signin-failed':
-        return 'Gagal login dengan Google. Silakan coba lagi.';
       default:
         return 'Terjadi kesalahan: $errorCode';
     }
@@ -510,59 +463,29 @@ class _LoginState extends State<Login> {
                           ),
                         ),
                   ),
-                  const SizedBox(height: 20),
                   
-                  // Divider
-                  Row(
-                    children: [
-                      const Expanded(child: Divider(thickness: 1)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'atau',
-                          style: GoogleFonts.poppins(
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                      const Expanded(child: Divider(thickness: 1)),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Google Sign In Button
-                  SignInButton(
-                    Buttons.google,
-                    onPressed: _isLoading 
-                      ? () {} // Fungsi kosong saat loading
-                      : _handleGoogleSignIn,
-                    text: 'Sign in with Google',
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    // Opsional: Tambahkan opacity saat loading untuk memberi visual feedback
-                    // opacity: _isLoading ? 0.6 : 1.0,
-                  ),
-                  
-                  // Show Biometric Button if available
                   if (_isBiometricAvailable) ...[
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: _isLoading ? null : _handleBiometricLogin,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal.shade700,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                    const SizedBox(height: 20),
+                    // Biometric login option
+                    OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _showBiometricDialog,
+                      icon: const Icon(
+                        Icons.fingerprint,
+                        color: Color(0xFF014331),
                       ),
-                      icon: const Icon(Icons.fingerprint, color: Colors.white),
                       label: Text(
                         'Login dengan Biometrik',
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Colors.white,
+                          color: const Color(0xFF014331),
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: const BorderSide(color: Color(0xFF014331)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
                         ),
                       ),
                     ),

@@ -1,8 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-
 import 'package:lokasync/firebase_options.dart';
-import 'package:lokasync/presentation/controllers/auth_controller.dart';
+import 'package:lokasync/presentation/screens/splash_screen.dart';
 import 'package:lokasync/features/auth/presentation/pages/forgotpassword_page.dart';
 import 'package:lokasync/features/auth/presentation/pages/login_page.dart';
 import 'package:lokasync/features/auth/presentation/pages/register_page.dart';
@@ -33,7 +32,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.green,
         useMaterial3: true,
       ),
-      home: AuthenticationWrapper(),
+      home: const SplashScreen(),
       routes: {
         '/login': (context) => const Login(),
         '/register': (context) => const Register(),

@@ -57,29 +57,72 @@ class _ProfileState extends State<Profile> {
 
   // Load user data
   Future<void> _loadUserData() async {
-    setState(() => _isLoading = true);
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
     
     try {
-      final user = _authController.getCurrentUser();
+      // Add debug print to track user loading
+      debugPrint('PROFILE DEBUG: Loading user data...');
       
-      if (user != null) {
+      // Wait for user data to be ready before setting state
+      await Future.delayed(const Duration(milliseconds: 200));
+      final user = _authController.getCurrentUser();
+      debugPrint('PROFILE DEBUG: User from getCurrentUser(): ${user?.uid}');
+      
+      if (user != null && mounted) {
         setState(() {
           _currentUser = user;
+          // These fields are non-nullable in UserModel, so no need for null checks
           _nameController.text = user.fullName;
           _emailController.text = user.email;
         });
+        debugPrint('PROFILE DEBUG: User data set successfully');
+      } else {
+        debugPrint('PROFILE DEBUG: No user found, attempting to reload...');
+        // If no user found immediately, wait a bit longer and try again
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        final retryUser = _authController.getCurrentUser();
+        debugPrint('PROFILE DEBUG: Retry user result: ${retryUser?.uid}');
+        
+        if (retryUser != null && mounted) {
+          setState(() {
+            _currentUser = retryUser;
+            // These fields are non-nullable in UserModel, so no need for null checks
+            _nameController.text = retryUser.fullName;
+            _emailController.text = retryUser.email;
+          });
+          debugPrint('PROFILE DEBUG: User data set on retry');
+        } else if (mounted) {
+          debugPrint('PROFILE DEBUG: Still no user data after retry');
+          _redirectToLogin();
+        }
       }
     } catch (e) {
+      debugPrint('PROFILE DEBUG: Error loading user: ${e.toString()}');
       // Error handling
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading profile: ${e.toString()}')),
         );
+        _redirectToLogin();
       }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  // Redirect to login if user data cannot be loaded
+  void _redirectToLogin() {
+    if (mounted) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+      });
     }
   }
 
@@ -154,50 +197,151 @@ class _ProfileState extends State<Profile> {
 
   // Handle logout
   Future<void> _handleLogout() async {
-    // Show confirmation dialog
-    final result = await showDialog<bool>(
+    // Show logout confirmation with bottom sheet instead of AlertDialog
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF014331),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildLogoutConfirmationSheet(),
+    );
+  }
+  
+  // Bottom sheet for logout confirmation
+  Widget _buildLogoutConfirmationSheet() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Handle bar indicator
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
-            child: const Text('Logout', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+            
+            // Icon
+            Icon(
+              Icons.logout_rounded,
+              color: Colors.orange.shade700,
+              size: 48,
+            ),
+            const SizedBox(height: 16),
+            
+            // Title
+            Text(
+              'Logout',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF014331),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Description
+            Text(
+              'Apakah Anda yakin ingin keluar dari aplikasi?',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            
+            // Buttons
+            Row(
+              children: [
+                // Cancel button
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(color: Colors.grey.shade400),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                
+                // Logout button
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      
+                      setState(() => _isLoading = true);
+                      
+                      try {
+                        await _authController.signOut();
+                        
+                        if (!mounted) return;
+                        
+                        // Navigate to login page - Making this more robust to prevent null errors
+                        setState(() => _isLoading = false);
+                        
+                        // Add a short delay before navigating to ensure any async operations complete
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          if (mounted) {
+                            Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                          }
+                        });
+                      } catch (e) {
+                        if (!mounted) return;
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error logging out: ${e.toString()}')),
+                        );
+                        
+                        setState(() => _isLoading = false);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange.shade700,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Logout',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
-    
-    if (result == true) {
-      setState(() => _isLoading = true);
-      
-      try {
-        await _authController.signOut();
-        
-        if (!mounted) return;
-        
-        // Navigate to login page
-        Navigator.pushReplacementNamed(context, '/login');
-      } catch (e) {
-        if (!mounted) return;
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error logging out: ${e.toString()}')),
-        );
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
-      }
-    }
   }
 
   // Handle delete account
@@ -230,70 +374,73 @@ class _ProfileState extends State<Profile> {
           ),
         ),
       ),
-      body: _isLoading && _currentUser == null
+      body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF014331)))
-          : SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Profile Card
-                    _buildProfileCard(),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Edit Options
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildSectionTitle('Edit Profile'),
-                          _buildEditNameField(),
-                          const SizedBox(height: 16),
-                          _buildActionButton(
-                            label: 'Update Profile',
-                            icon: Icons.save,
-                            onPressed: _handleUpdateProfile,
+          : (_currentUser == null 
+              ? const Center(child: Text('No user data available. Please log in again.'))
+              : SafeArea(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Profile Card
+                        _buildProfileCard(),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Edit Options
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildSectionTitle('Edit Profile'),
+                              _buildEditNameField(),
+                              const SizedBox(height: 16),
+                              _buildActionButton(
+                                label: 'Update Profile',
+                                icon: Icons.save,
+                                onPressed: _handleUpdateProfile,
+                              ),
+                              
+                              const SizedBox(height: 32),
+                              
+                              _buildSectionTitle('Account Settings'),
+                              _buildAccountActionTile(
+                                title: 'Change Email',
+                                icon: Icons.email,
+                                onTap: _handleChangeEmail,
+                              ),
+                              _buildAccountActionTile(
+                                title: 'Change Password',
+                                icon: Icons.lock,
+                                onTap: _handleChangePassword,
+                              ),
+                              _buildBiometricLoginTile(),
+                              
+                              const SizedBox(height: 32),
+                              
+                              _buildSectionTitle('Danger Zone', color: Colors.red),
+                              _buildDangerActionTile(
+                                title: 'Logout',
+                                icon: Icons.logout,
+                                onTap: _handleLogout,
+                              ),
+                              _buildDangerActionTile(
+                                title: 'Delete Account Permanently',
+                                icon: Icons.delete_forever,
+                                onTap: _handleDeleteAccount,
+                                isDestructive: true,
+                              ),
+                            ],
                           ),
-                          
-                          const SizedBox(height: 32),
-                          
-                          _buildSectionTitle('Account Settings'),
-                          _buildAccountActionTile(
-                            title: 'Change Email',
-                            icon: Icons.email,
-                            onTap: _handleChangeEmail,
-                          ),
-                          _buildAccountActionTile(
-                            title: 'Change Password',
-                            icon: Icons.lock,
-                            onTap: _handleChangePassword,
-                          ),
-                          _buildBiometricLoginTile(),
-                          
-                          const SizedBox(height: 32),
-                          
-                          _buildSectionTitle('Danger Zone', color: Colors.red),
-                          _buildDangerActionTile(
-                            title: 'Logout',
-                            icon: Icons.logout,
-                            onTap: _handleLogout,
-                          ),
-                          _buildDangerActionTile(
-                            title: 'Delete Account Permanently',
-                            icon: Icons.delete_forever,
-                            onTap: _handleDeleteAccount,
-                            isDestructive: true,
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
+                )
+          ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentIndex,
         onTap: _onItemTapped,
@@ -402,28 +549,47 @@ class _ProfileState extends State<Profile> {
 
   // Widget untuk edit nama
   Widget _buildEditNameField() {
-    return TextFormField(
-      controller: _nameController,
-      decoration: InputDecoration(
-        labelText: 'Full Name',
-        prefixIcon: const Icon(Icons.person, color: Color(0xFF014331)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF014331), width: 2),
-        ),
-      ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Name cannot be empty';
-        }
-        if (value.length < 3) {
-          return 'Name must be at least 3 characters';
-        }
-        return null;
-      },
+    // Add state variable to track if name field is in edit mode
+    bool isNameEditable = false;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return TextFormField(
+          controller: _nameController,
+          readOnly: !isNameEditable,
+          decoration: InputDecoration(
+            labelText: 'Full Name',
+            prefixIcon: const Icon(Icons.person, color: Color(0xFF014331)),
+            suffixIcon: IconButton(
+              icon: Icon(
+                isNameEditable ? Icons.check : Icons.edit,
+                color: Color(0xFF014331),
+              ),
+              onPressed: () {
+                setState(() {
+                  isNameEditable = !isNameEditable;
+                });
+              },
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF014331), width: 2),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Name cannot be empty';
+            }
+            if (value.length < 3) {
+              return 'Name must be at least 3 characters';
+            }
+            return null;
+          },
+        );
+      }
     );
   }
 
@@ -708,7 +874,9 @@ class _ProfileState extends State<Profile> {
                                     newPassController.text.isEmpty ||
                                     confirmPassController.text.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('All fields are required')),
+                                    const SnackBar(
+                                      content: Text('All fields are required')
+                                    ),
                                   );
                                   return;
                                 }
@@ -764,7 +932,9 @@ class _ProfileState extends State<Profile> {
                                   // Show success notification
                                   ElegantNotification.success(
                                     title: const Text("Success!"),
-                                    description: const Text("Password has been changed successfully."),
+                                    description: const Text(
+                                      "Password has been changed successfully."
+                                    ),
                                     animation: AnimationType.fromTop,
                                     position: Alignment.topRight,
                                   ).show(context);
@@ -1173,19 +1343,14 @@ class _ProfileState extends State<Profile> {
                                   
                                   if (!context.mounted) return;
                                   
-                                  // Close sheet
+                                  // Close sheet first
                                   Navigator.pop(context);
                                   
-                                  // Navigate to login page
+                                  // Navigate to login page and then show notification (to fix error)
                                   Navigator.pushReplacementNamed(context, '/login');
                                   
-                                  // Show notification
-                                  ElegantNotification.info(
-                                    title: const Text("Account Deleted"),
-                                    description: const Text("Your account has been permanently deleted."),
-                                    animation: AnimationType.fromTop,
-                                    position: Alignment.topRight,
-                                  ).show(context);
+                                  // Important: We don't try to show notification after navigation
+                                  // as it causes the TypeError exception
                                   
                                 } catch (e) {
                                   if (!context.mounted) return;
@@ -1309,39 +1474,50 @@ class _ProfileState extends State<Profile> {
                         
                         try {
                           if (value) {
-                            // Show dialog to collect password for enabling biometric login
-                            final password = await _showEnableBiometricDialog();
-                            
-                            if (password != null && password.isNotEmpty && mounted) {
-                              // Enable biometric login with the current email and provided password
-                              await _authController.enableBiometricLogin(
-                                _currentUser!.email,
-                                password,
-                              );
+                            // Enable biometric login
+                            if (_currentUser != null) {
+                              // We need to ask for the user's password to enable biometric login
+                              // Show a password dialog
+                              final password = await _showPasswordConfirmDialog();
                               
-                              if (!mounted) return;
-                              
-                              // Show success notification
-                              ElegantNotification.success(
-                                title: const Text("Success!"),
-                                description: const Text("Biometric login has been enabled."),
-                                animation: AnimationType.fromTop,
-                                position: Alignment.topRight,
-                              ).show(context);
+                              if (password != null && password.isNotEmpty) {
+                                final email = _currentUser!.email;
+                                
+                                // Enable biometric login with the entered password
+                                await _authController.enableBiometricLogin(
+                                  email,
+                                  password,
+                                );
+                                
+                                if (mounted) {
+                                  // Show success notification
+                                  ElegantNotification.success(
+                                    title: const Text("Success!"),
+                                    description: const Text("Biometric login has been enabled."),
+                                    animation: AnimationType.fromTop,
+                                    position: Alignment.topRight,
+                                  ).show(context);
+                                }
+                              } else {
+                                // User canceled or entered empty password
+                                throw Exception("Password is required to enable biometric login");
+                              }
+                            } else {
+                              throw Exception("User information not available");
                             }
                           } else {
                             // Disable biometric login by clearing stored credentials
                             await _authController.disableBiometricLogin();
                             
-                            if (!mounted) return;
-                            
-                            // Show success notification
-                            ElegantNotification.success(
-                              title: const Text("Success!"),
-                              description: const Text("Biometric login has been disabled."),
-                              animation: AnimationType.fromTop,
-                              position: Alignment.topRight,
-                            ).show(context);
+                            if (mounted) {
+                              // Show success notification
+                              ElegantNotification.success(
+                                title: const Text("Success!"),
+                                description: const Text("Biometric login has been disabled."),
+                                animation: AnimationType.fromTop,
+                                position: Alignment.topRight,
+                              ).show(context);
+                            }
                           }
                           
                           // Force UI refresh
@@ -1349,18 +1525,15 @@ class _ProfileState extends State<Profile> {
                             setState(() {});
                           }
                         } catch (e) {
-                          if (!mounted) return;
-                          
-                          // Create a local variable to capture the current BuildContext
-                          final currentContext = context;
-                          
-                          // Show error notification
-                          ElegantNotification.error(
-                            title: const Text("Error!"),
-                            description: Text("Could not update biometric settings: ${e.toString()}"),
-                            animation: AnimationType.fromTop,
-                            position: Alignment.topRight,
-                          ).show(currentContext);
+                          if (mounted) {
+                            // Show error notification
+                            ElegantNotification.error(
+                              title: const Text("Error!"),
+                              description: Text("Could not update biometric settings: ${e.toString()}"),
+                              animation: AnimationType.fromTop,
+                              position: Alignment.topRight,
+                            ).show(context);
+                          }
                         } finally {
                           if (mounted) {
                             setState(() => _isLoading = false);
@@ -1376,8 +1549,8 @@ class _ProfileState extends State<Profile> {
                 ),
                 subtitle: Text(
                   isEnabled 
-                      ? 'Use fingerprint or face ID to login' 
-                      : 'Login with fingerprint or face ID',
+                      ? 'Use your fingerprint to login' 
+                      : 'Login with fingerprint is disabled',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.grey.shade600,
@@ -1397,18 +1570,21 @@ class _ProfileState extends State<Profile> {
     );
   }
   
-  // Dialog to get password for enabling biometric login
-  Future<String?> _showEnableBiometricDialog() async {
+  // Show password confirmation dialog
+  Future<String?> _showPasswordConfirmDialog() async {
     final TextEditingController passwordController = TextEditingController();
     bool obscurePassword = true;
+    bool isPasswordIncorrect = false;
+    bool isValidating = false;
     
-    return await showDialog<String>(
+    return showDialog<String>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
             title: Text(
-              'Enable Biometric Login',
+              'Confirm Your Password',
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF014331),
@@ -1418,7 +1594,7 @@ class _ProfileState extends State<Profile> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Enter your password to enable biometric login:',
+                  'Please enter your current password to enable biometric login',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Colors.grey.shade700,
@@ -1430,6 +1606,7 @@ class _ProfileState extends State<Profile> {
                   obscureText: obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
+                    errorText: isPasswordIncorrect ? 'Password is incorrect' : null,
                     prefixIcon: const Icon(Icons.lock, color: Color(0xFF014331)),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -1447,11 +1624,16 @@ class _ProfileState extends State<Profile> {
                     ),
                   ),
                 ),
+                if (isValidating)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16.0),
+                    child: Center(child: CircularProgressIndicator(color: const Color(0xFF014331))),
+                  ),
               ],
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: isValidating ? null : () => Navigator.pop(context),
                 child: Text(
                   'Cancel',
                   style: GoogleFonts.poppins(
@@ -1460,24 +1642,43 @@ class _ProfileState extends State<Profile> {
                 ),
               ),
               ElevatedButton(
-                onPressed: () async {
-                  // Verify password before enabling biometric
-                  final success = await _authController.reauthenticateUser(
-                    passwordController.text,
-                  );
-                  
-                  if (!success) {
-                    if (!context.mounted) return;
-                    
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Password is incorrect')),
-                    );
-                    return;
-                  }
-                  
-                  if (!context.mounted) return;
-                  Navigator.pop(context, passwordController.text);
-                },
+                onPressed: isValidating 
+                    ? null 
+                    : () async {
+                        if (passwordController.text.isEmpty) {
+                          setState(() {
+                            isPasswordIncorrect = true;
+                          });
+                          return;
+                        }
+                        
+                        // Validate password before returning
+                        setState(() {
+                          isValidating = true;
+                        });
+                        
+                        try {
+                          final success = await _authController.reauthenticateUser(
+                            passwordController.text,
+                          );
+                          
+                          if (!success) {
+                            setState(() {
+                              isPasswordIncorrect = true;
+                              isValidating = false;
+                            });
+                            return;
+                          }
+                          
+                          // Password is correct
+                          Navigator.pop(context, passwordController.text);
+                        } catch (e) {
+                          setState(() {
+                            isPasswordIncorrect = true;
+                            isValidating = false;
+                          });
+                        }
+                    },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF014331),
                   shape: RoundedRectangleBorder(
@@ -1485,7 +1686,7 @@ class _ProfileState extends State<Profile> {
                   ),
                 ),
                 child: Text(
-                  'Enable',
+                  'Confirm',
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                   ),

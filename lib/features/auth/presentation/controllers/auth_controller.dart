@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lokasync/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:lokasync/features/auth/domain/entities/user_entity.dart';
 
-
 class AuthController {
   final AuthRepositoriesImpl _authRepository;
   
@@ -36,17 +35,6 @@ class AuthController {
       rethrow; // Re-throw to be caught by the UI
     } catch (e) {
       rethrow; // Re-throw to be caught by the UI
-    }
-  }
-
-  /// Login dengan Google
-  Future<FirebaseUserEntity?> signInWithGoogle() async {
-    try {
-      return await _authRepository.signInWithGoogle();
-    } on FirebaseAuthException {
-      rethrow;
-    } catch (e) {
-      rethrow;
     }
   }
   
@@ -220,6 +208,15 @@ class AuthController {
   Future<FirebaseUserEntity?> signInWithBiometrics() async {
     try {
       return await _authRepository.signInWithBiometrics();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Login dengan stored credentials (tanpa cek biometrik lagi)
+  Future<FirebaseUserEntity?> signInWithStoredCredentials() async {
+    try {
+      return await _authRepository.signInWithStoredCredentials();
     } catch (e) {
       rethrow;
     }
