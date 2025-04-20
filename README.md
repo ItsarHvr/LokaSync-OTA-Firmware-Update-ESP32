@@ -43,7 +43,7 @@ flutter run
 - [X] Reset Password Page
 - [ ] Home Page
 - [ ] Monitoring Page
-- [ ] Profile Page
+- [X] Profile Page
 
 ## Credits
 

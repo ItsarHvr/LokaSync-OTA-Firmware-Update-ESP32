@@ -1,7 +1,15 @@
 name: lokasync
 description: "LokaSync App"
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 1.1.0-alpha.1+1
+
+# Removed features:
+# - Login using Google account
+# Added features:
+# - Login using fingerprint (biometric)
+# Fix bugs:
+# - User profile icon not directing to profile page
+# - Null operator issue was caused by wrong implementation of elegant notification
+version: 1.0.0-alpha.2+2
 
 environment:
   sdk: ^3.7.2
