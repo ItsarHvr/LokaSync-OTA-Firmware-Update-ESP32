@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:elegant_notification/elegant_notification.dart';
-import 'package:elegant_notification/resources/arrays.dart';
 import 'package:lokasync/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:lokasync/features/auth/domain/entities/user_entity.dart';
 import 'package:lokasync/presentation/widgets/bottom_navbar.dart';
@@ -34,16 +32,51 @@ class _ProfileState extends State<Profile> {
     _loadUserData();
   }
 
+  // Helper function to show customized SnackBar
+  void _showSnackBar(String message, bool isSuccess, {int durationSeconds = 3}) {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isSuccess ? Icons.check_circle : Icons.error_outline,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: isSuccess ? const Color(0xFF2E7D32) : const Color(0xFFD32F2F),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(10),
+        duration: Duration(seconds: durationSeconds),
+      ),
+    );
+  }
+
   // Method untuk menangani navigasi bottom bar
   void _onItemTapped(int index) {
-    if (index == _currentIndex) return; // Avoid unnecessary navigation if already on this tab
+    if (index == _currentIndex) return;
     
     if (index == 0) {
       Navigator.pushReplacementNamed(context, '/home');
     } else if (index == 1) {
       Navigator.pushReplacementNamed(context, '/monitoring');
     }
-    // No need to handle index 2 (profile) as we're already here
   }
 
   @override
@@ -103,9 +136,7 @@ class _ProfileState extends State<Profile> {
       debugPrint('PROFILE DEBUG: Error loading user: ${e.toString()}');
       // Error handling
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading profile: ${e.toString()}')),
-        );
+        _showSnackBar('Error loading profile: ${e.toString()}', false);
         _redirectToLogin();
       }
     } finally {
@@ -144,28 +175,14 @@ class _ProfileState extends State<Profile> {
           _currentUser = updatedUser;
         });
         
-        // Show success notification
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.success(
-            title: const Text("Sukses!"),
-            description: const Text("Profil berhasil diperbarui."),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
+        // Show success notification with SnackBar
+        _showSnackBar("Nama Anda berhasil diperbarui.", true);
       }
     } catch (e) {
       if (!mounted) return;
       
-      // Show error notification
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ElegantNotification.error(
-          title: const Text("Gagal!"),
-          description: Text("Gagal memperbarui profil: ${e.toString()}"),
-          animation: AnimationType.fromTop,
-          position: Alignment.topRight,
-        ).show(context);
-      });
+      // Show error notification with SnackBar
+      _showSnackBar("Gagal memperbarui profil: ${e.toString()}", false);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -268,14 +285,10 @@ class _ProfileState extends State<Profile> {
               children: [
                 // Cancel button
                 Expanded(
-                  child: OutlinedButton(
+                  child: TextButton(
                     onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
+                    style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(color: Colors.grey.shade400),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
                     ),
                     child: Text(
                       'Cancel',
@@ -930,14 +943,7 @@ class _ProfileState extends State<Profile> {
                                   Navigator.pop(context);
                                   
                                   // Show success notification
-                                  ElegantNotification.success(
-                                    title: const Text("Success!"),
-                                    description: const Text(
-                                      "Password has been changed successfully."
-                                    ),
-                                    animation: AnimationType.fromTop,
-                                    position: Alignment.topRight,
-                                  ).show(context);
+                                  _showSnackBar("Password has been changed successfully.", true);
                                   
                                 } catch (e) {
                                   if (!context.mounted) return;
@@ -1155,12 +1161,7 @@ class _ProfileState extends State<Profile> {
                                   Navigator.pop(context);
                                   
                                   // Show success notification
-                                  ElegantNotification.success(
-                                    title: const Text("Verification Email Sent"),
-                                    description: const Text("Please check your new email and verify it to complete the email change."),
-                                    animation: AnimationType.fromTop,
-                                    position: Alignment.topRight,
-                                  ).show(context);
+                                  _showSnackBar("Please check your new email and verify it to complete the email change.", true);
                                   
                                 } catch (e) {
                                   if (!context.mounted) return;
@@ -1491,12 +1492,7 @@ class _ProfileState extends State<Profile> {
                                 
                                 if (mounted) {
                                   // Show success notification
-                                  ElegantNotification.success(
-                                    title: const Text("Success!"),
-                                    description: const Text("Biometric login has been enabled."),
-                                    animation: AnimationType.fromTop,
-                                    position: Alignment.topRight,
-                                  ).show(context);
+                                  _showSnackBar("Biometric login has been enabled.", true);
                                 }
                               } else {
                                 // User canceled or entered empty password
@@ -1511,12 +1507,7 @@ class _ProfileState extends State<Profile> {
                             
                             if (mounted) {
                               // Show success notification
-                              ElegantNotification.success(
-                                title: const Text("Success!"),
-                                description: const Text("Biometric login has been disabled."),
-                                animation: AnimationType.fromTop,
-                                position: Alignment.topRight,
-                              ).show(context);
+                              _showSnackBar("Biometric login has been disabled.", true);
                             }
                           }
                           
@@ -1527,12 +1518,7 @@ class _ProfileState extends State<Profile> {
                         } catch (e) {
                           if (mounted) {
                             // Show error notification
-                            ElegantNotification.error(
-                              title: const Text("Error!"),
-                              description: Text("Could not update biometric settings: ${e.toString()}"),
-                              animation: AnimationType.fromTop,
-                              position: Alignment.topRight,
-                            ).show(context);
+                            _showSnackBar("Could not update biometric settings: ${e.toString()}", false);
                           }
                         } finally {
                           if (mounted) {

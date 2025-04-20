@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokasync/presentation/widgets/bottom_navbar.dart';
 import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:lokasync/presentation/widgets/bottom_navbar.dart';
 
 // Models
 class SensorData {

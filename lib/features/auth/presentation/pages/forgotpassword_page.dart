@@ -1,5 +1,3 @@
-import 'package:elegant_notification/elegant_notification.dart';
-import 'package:elegant_notification/resources/arrays.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -26,6 +24,42 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     super.dispose();
   }
 
+  // Helper function to show customized SnackBar
+  void _showSnackBar(String message, bool isSuccess, {int durationSeconds = 3}) {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isSuccess ? Icons.check_circle : Icons.error_outline,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: isSuccess ? const Color(0xFF2E7D32) : const Color(0xFFD32F2F),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(10),
+        duration: Duration(seconds: durationSeconds),
+      ),
+    );
+  }
+
   // Mengirim email reset password
   Future<void> _handleResetPassword() async {
     if (!_formKey.currentState!.validate()) return;
@@ -34,14 +68,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       _isLoading = true;
     });
     
-    // debugPrint("DEBUG: Memulai proses reset password.");
-    
     try {
       await _authController.sendPasswordResetEmail(_emailController.text.trim());
       
-      // debugPrint("DEBUG: Email reset password berhasil dikirim.");
-      
-      // PENTING: Periksa mounted setelah operasi async
       if (!mounted) return;
       
       setState(() {
@@ -49,56 +78,31 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         _emailSent = true;
       });
       
-      // Tampilkan notifikasi sukses
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ElegantNotification.success(
-          title: const Text("Berhasil!"),
-          description: const Text("Link reset password telah dikirim ke email Anda."),
-          animation: AnimationType.fromTop,
-          position: Alignment.topRight,
-        ).show(context);
-      });
+      // Show success message
+      _showSnackBar("Link reset password telah dikirim ke email Anda.", true);
       
-      // Reset form, jika berhasil pindah ke login page setelah beberapa detik
-      Future.delayed(const Duration(seconds: 5), () {
+      // Return to login page after a few seconds
+      Future.delayed(const Duration(seconds: 4), () {
         if (mounted) {
-          Navigator.pop(context); // Kembali ke halaman login
+          Navigator.pop(context);
         }
       });
       
     } on FirebaseAuthException catch (e) {
-      // debugPrint("DEBUG: FirebaseAuthException: ${e.code} - ${e.message}");
-      
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
         
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.error(
-            title: const Text("Gagal!"),
-            description: Text(_getFirebaseErrorMessage(e.code)),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
+        _showSnackBar(_getFirebaseErrorMessage(e.code), false);
       }
     } catch (e) {
-      // debugPrint("DEBUG: Exception umum: ${e.toString()}");
-      
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
         
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.error(
-            title: const Text("Error"),
-            description: Text("Terjadi kesalahan: ${e.toString()}"),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
+        _showSnackBar("Terjadi kesalahan: ${e.toString()}", false);
       }
     }
   }

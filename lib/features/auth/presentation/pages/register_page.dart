@@ -1,5 +1,3 @@
-import 'package:elegant_notification/elegant_notification.dart';
-import 'package:elegant_notification/resources/arrays.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -34,19 +32,48 @@ class _RegisterState extends State<Register> {
     super.dispose();
   }
   
+  // Helper function to show customized SnackBar
+  void _showSnackBar(String message, bool isSuccess, {int durationSeconds = 3}) {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isSuccess ? Icons.check_circle : Icons.error_outline,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: isSuccess ? const Color(0xFF2E7D32) : const Color(0xFFD32F2F),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(10),
+        duration: Duration(seconds: durationSeconds),
+      ),
+    );
+  }
+  
   // Handle registration with email and password
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
     
     if (!_agreeToTerms) {
-      // debugPrint("DEBUG: Menampilkan notifikasi terms & conditions");
-      final notification = ElegantNotification.info(
-        title: const Text("Perhatian"),
-        description: const Text("Anda harus menyetujui syarat dan ketentuan untuk melanjutkan."),
-        animation: AnimationType.fromTop,
-        position: Alignment.topRight,
-      );
-      notification.show(context);
+      _showSnackBar("Anda harus menyetujui syarat dan ketentuan untuk melanjutkan.", false);
       return;
     }
     
@@ -54,23 +81,13 @@ class _RegisterState extends State<Register> {
       _isLoading = true;
     });
     
-    // debugPrint("DEBUG: Mulai proses registrasi");
-    
     try {
       // Periksa kekuatan password
       final passwordStrength = _authController.checkPasswordStrength(_passwordController.text);
       if (!passwordStrength['isStrong']) {
-        // debugPrint("DEBUG: Password lemah, menampilkan notifikasi");
         if (!mounted) return;
         
-        final weakPassNotification = ElegantNotification.error(
-          title: const Text("Password Lemah!"),
-          description: const Text("Gunakan kombinasi huruf besar, kecil, angka, dan simbol."),
-          animation: AnimationType.fromTop,
-          position: Alignment.topRight,
-        );
-        
-        weakPassNotification.show(context);
+        _showSnackBar("Gunakan kombinasi huruf besar, kecil, angka, dan simbol.", false);
         
         setState(() {
           _isLoading = false;
@@ -78,129 +95,74 @@ class _RegisterState extends State<Register> {
         return;
       }
       
-      // debugPrint("DEBUG: Memanggil registerWithEmailAndPassword");
       final user = await _authController.registerWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),
         _fullNameController.text.trim(),
       );
       
-      // debugPrint("DEBUG: Registrasi selesai, hasil: ${user != null ? 'sukses' : 'gagal'}");
-      
-      // SANGAT PENTING: Periksa mounted setelah operasi async
-      if (!mounted) {
-        // debugPrint("DEBUG: Widget tidak mounted setelah registerWithEmailAndPassword");
-        return;
-      }
+      if (!mounted) return;
       
       if (user != null) {
-        // debugPrint("DEBUG: User valid, mengirim email verifikasi");
         try {
           // Kirim verifikasi email
           await _authController.sendEmailVerification();
-          // debugPrint("DEBUG: Email verifikasi terkirim");
         } catch (verifyError) {
-          // debugPrint("DEBUG: Error saat mengirim email verifikasi: $verifyError");
+          // Ignore verification errors
         }
         
-        // SANGAT PENTING: Periksa mounted setelah operasi async kedua
-        if (!mounted) {
-          // debugPrint("DEBUG: Widget tidak mounted setelah sendEmailVerification");
-          return;
-        }
+        if (!mounted) return;
         
-        // debugPrint("DEBUG: Menampilkan notifikasi sukses");
-
-        // PENTING: Tampilkan notifikasi sukses SEBELUM logout
-        // PERBAIKAN: Hapus autoDismiss: false
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.success(
-            title: const Text("Registrasi Berhasil!"),
-            description: const Text("Silakan cek email Anda untuk verifikasi."),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
+        // Show success message
+        _showSnackBar("Registrasi Berhasil! Silakan cek email Anda untuk verifikasi.", true, durationSeconds: 5);
         
         // Reset form dan state
         _formKey.currentState!.reset();
         setState(() {
           _agreeToTerms = false;
-          // Penting: tetap set loading ke false sebelum navigasi
           _isLoading = false;
         });
         
-        // PERBAIKAN: Tambahkan delay yang lebih panjang sebelum signOut 
-        // untuk memberikan waktu notifikasi muncul dan dilihat
+        // Give user time to read the message before logging out
         await Future.delayed(const Duration(seconds: 2));
-        // debugPrint("DEBUG: Melakukan signOut");
         
         // Logout (karena belum verifikasi)
         await _authController.signOut();
 
-        // Pemeriksaan mounted lagi setelah operasi async lainnya
         if (!mounted) return;
         
-        // Kembali ke halaman login setelah beberapa detik
-        Future.delayed(const Duration(seconds: 3), () {
+        // Kembali ke halaman login
+        Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
-            // debugPrint("DEBUG: Navigasi kembali ke login");
-            Navigator.pop(context); // Kembali ke halaman login
+            Navigator.pop(context);
           }
         });
       } else {
-        // Penting: handle kasus user null (jarang terjadi)
-        // debugPrint("DEBUG: User null setelah registrasi");
         if (mounted) {
           setState(() {
             _isLoading = false;
           });
           
-          ElegantNotification.error(
-            title: const Text("Registrasi Gagal"),
-            description: const Text("Terjadi kesalahan saat mendaftar. Silakan coba lagi."),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
+          _showSnackBar("Terjadi kesalahan saat mendaftar. Silakan coba lagi.", false);
         }
       }
     } on FirebaseAuthException catch (e) {
-      // debugPrint("DEBUG: FirebaseAuthException: ${e.code} - ${e.message}.");
-      
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
         
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.error(
-            title: const Text("Registrasi Gagal!"),
-            description: Text(_getFirebaseErrorMessage(e.code)),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
+        _showSnackBar(_getFirebaseErrorMessage(e.code), false);
       }
     } catch (e) {
-      // debugPrint("DEBUG: Exception umum: ${e.toString()}");
-      
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
         
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.error(
-            title: const Text("Error"),
-            description: Text("Terjadi kesalahan: ${e.toString()}"),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
+        _showSnackBar("Terjadi kesalahan: ${e.toString()}", false);
       }
     } finally {
-      // Pastikan loading dihentikan dalam semua kasus
-      // debugPrint("DEBUG: Menjalankan finally block, reset loading");
       if (mounted) {
         setState(() {
           _isLoading = false;

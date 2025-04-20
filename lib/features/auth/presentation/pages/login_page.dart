@@ -1,5 +1,3 @@
-import 'package:elegant_notification/elegant_notification.dart';
-import 'package:elegant_notification/resources/arrays.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -69,6 +67,42 @@ class _LoginState extends State<Login> {
     super.dispose();
   }
 
+  // Helper function to show customized SnackBar
+  void _showSnackBar(String message, bool isSuccess) {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isSuccess ? Icons.check_circle : Icons.error_outline,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: isSuccess ? const Color(0xFF2E7D32) : const Color(0xFFD32F2F),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(10),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   // Handle login with email and password
   Future<void> _handleEmailPasswordSignIn() async {
     if (!_formKey.currentState!.validate()) return;
@@ -86,38 +120,25 @@ class _LoginState extends State<Login> {
       if (!mounted) return;
       
       if (user != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.success(
-            title: const Text("Login Berhasil!"),
-            description: Text("Selamat datang kembali${user.fullName.isNotEmpty ? ', ${user.fullName}' : ''}!"),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
+        // Show success message using SnackBar
+        _showSnackBar(
+          "Selamat datang kembali${user.fullName.isNotEmpty ? ', ${user.fullName}' : ''}!",
+          true
+        );
         
         setState(() {
           _isLoading = false;
         });
         
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          if (mounted) {
-            Navigator.pushReplacementNamed(context, '/home');
-          }
-        });
+        // Navigate immediately after showing the message
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
       } else {
         if (mounted) {
           setState(() {
             _isLoading = false;
           });
           
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ElegantNotification.error(
-              title: const Text("Login Gagal"),
-              description: const Text("Terjadi kesalahan saat login. Silahkan Coba lagi nanti."),
-              animation: AnimationType.fromTop,
-              position: Alignment.topRight,
-            ).show(context);
-          });
+          _showSnackBar("Terjadi kesalahan saat login. Silahkan Coba lagi nanti.", false);
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -128,14 +149,7 @@ class _LoginState extends State<Login> {
           _isLoading = false;
         });
         
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.error(
-            title: const Text("Login Gagal!"),
-            description: Text(errorMessage),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
+        _showSnackBar(errorMessage, false);
       }
     } catch (e) {
       if (mounted) {
@@ -143,14 +157,7 @@ class _LoginState extends State<Login> {
           _isLoading = false;
         });
         
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ElegantNotification.error(
-            title: const Text("Error"),
-            description: Text("Terjadi kesalahan: ${e.toString()}."),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
-        });
+        _showSnackBar("Terjadi kesalahan: ${e.toString()}", false);
       }
     }
   }
@@ -159,9 +166,7 @@ class _LoginState extends State<Login> {
   Future<void> _showBiometricDialog() async {
     if (!_isBiometricAvailable) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Biometric login is not available or not enabled')),
-        );
+        _showSnackBar('Biometric login is not available or not enabled', false);
       }
       return;
     }
@@ -180,12 +185,7 @@ class _LoginState extends State<Login> {
       debugPrint('BIOMETRIC_AUTH: Starting biometric authentication flow');
       
       // Show a snackbar to make it clear that we're waiting for fingerprint
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please scan your fingerprint'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      _showSnackBar('Please scan your fingerprint', true);
       
       // First authenticate with biometrics at the OS level
       debugPrint('BIOMETRIC_AUTH: Calling authenticateWithBiometrics()');
@@ -197,11 +197,7 @@ class _LoginState extends State<Login> {
           setState(() {
             _isLoading = false;
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Biometric authentication failed or cancelled'),
-            ),
-          );
+          _showSnackBar('Biometric authentication failed or cancelled', false);
         }
         return;
       }
@@ -216,23 +212,11 @@ class _LoginState extends State<Login> {
         if (!mounted) return;
         
         if (user != null) {
-          // Show success notification
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ElegantNotification.success(
-              title: const Text("Login Berhasil!"),
-              description: Text("Selamat datang kembali${user.fullName.isNotEmpty ? ', ${user.fullName}' : ''}!"),
-              animation: AnimationType.fromTop,
-              position: Alignment.topRight,
-              autoDismiss: true,
-            ).show(context);
-          });
+          // Show success message
+          _showSnackBar("Selamat datang kembali${user.fullName.isNotEmpty ? ', ${user.fullName}' : ''}!", true);
           
-          // Navigate to home page
-          Future.delayed(const Duration(milliseconds: 1500), () {
-            if (mounted) {
-              Navigator.pushReplacementNamed(context, '/home');
-            }
-          });
+          // Navigate immediately
+          Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
         }
       } catch (credentialError) {
         debugPrint('BIOMETRIC_AUTH: Credential error: ${credentialError.toString()}');
@@ -245,19 +229,12 @@ class _LoginState extends State<Login> {
           
           await _authController.disableBiometricLogin();
           
-          ElegantNotification.error(
-            title: const Text("Fingerprint Login Failed"),
-            description: const Text("Your saved credentials are no longer valid. Please login with email and password, then re-enable fingerprint login."),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
+          _showSnackBar(
+            "Your saved credentials are no longer valid. Please login with email and password, then re-enable fingerprint login.",
+            false
+          );
         } else {
-          ElegantNotification.error(
-            title: const Text("Fingerprint Login Failed"),
-            description: Text("Error: ${credentialError.toString()}"),
-            animation: AnimationType.fromTop,
-            position: Alignment.topRight,
-          ).show(context);
+          _showSnackBar("Error: ${credentialError.toString()}", false);
         }
       }
     } catch (e) {
@@ -272,12 +249,7 @@ class _LoginState extends State<Login> {
           return;
         }
         
-        ElegantNotification.error(
-          title: const Text("Gagal Login dengan Biometrik"),
-          description: Text("Terjadi kesalahan: ${e.toString()}"),
-          animation: AnimationType.fromTop,
-          position: Alignment.topRight,
-        ).show(context);
+        _showSnackBar("Terjadi kesalahan: ${e.toString()}", false);
       }
     } finally {
       if (mounted) {
