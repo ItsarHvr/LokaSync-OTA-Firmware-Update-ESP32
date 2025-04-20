@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
@@ -75,7 +74,7 @@ class AuthRepositoriesImpl implements AuthRepositories {
         if (isBiometricEnabled) {
           await _secureStorage.write(key: 'auth_email', value: email);
           await _secureStorage.write(key: 'auth_password', value: password);
-          debugPrint('Stored credentials refreshed after successful login');
+          // debugPrint('Stored credentials refreshed after successful login');
         }
         
         return UserModel.fromFirebaseUser(userCredential.user!);
@@ -238,7 +237,7 @@ class AuthRepositoriesImpl implements AuthRepositories {
         
         // If biometric login is enabled, update the stored password
         if (isBiometricEnabled && user.email != null) {
-          debugPrint('BIOMETRIC DEBUG: Updating stored credentials after password change');
+          // debugPrint('BIOMETRIC DEBUG: Updating stored credentials after password change');
           await _secureStorage.write(key: 'auth_password', value: newPassword);
         }
       } else {
@@ -278,7 +277,7 @@ class AuthRepositoriesImpl implements AuthRepositories {
         
         // If biometric login is enabled, update the stored email
         if (isBiometricEnabled) {
-          debugPrint('BIOMETRIC DEBUG: Updating stored email after email change');
+          // debugPrint('BIOMETRIC DEBUG: Updating stored email after email change');
           await _secureStorage.write(key: 'auth_email', value: newEmail);
           await _secureStorage.write(key: 'auth_password', value: password);
         }
@@ -339,7 +338,7 @@ class AuthRepositoriesImpl implements AuthRepositories {
       
       return canAuthenticateWithBiometrics && canAuthenticate;
     } catch (e) {
-      debugPrint('Error checking biometric availability: ${e.toString()}');
+      // debugPrint('Error checking biometric availability: ${e.toString()}');
       return false;
     }
   }
@@ -357,17 +356,17 @@ class AuthRepositoriesImpl implements AuthRepositories {
       );
     } on PlatformException catch (e) {
       if (e.code == auth_error.notAvailable) {
-        debugPrint('Biometric authentication is not available on this device.');
+        // debugPrint('Biometric authentication is not available on this device.');
         throw Exception('Biometric authentication is not available on this device.');
       } else if (e.code == auth_error.notEnrolled) {
-        debugPrint('No biometric enrolled on this device.');
+        // debugPrint('No biometric enrolled on this device.');
         throw Exception('No biometric enrolled on this device.');
       } else {
-        debugPrint('Error during biometric authentication: ${e.toString()}');
+        // debugPrint('Error during biometric authentication: ${e.toString()}');
         throw Exception('Biometric authentication failed: ${e.message}');
       }
     } catch (e) {
-      debugPrint('Error during biometric authentication: ${e.toString()}');
+      // debugPrint('Error during biometric authentication: ${e.toString()}');
       throw Exception('Biometric authentication failed: ${e.toString()}');
     }
   }
@@ -375,11 +374,11 @@ class AuthRepositoriesImpl implements AuthRepositories {
   @override
   Future<void> enableBiometricLogin(String email, String password) async {
     try {
-      debugPrint('BIOMETRIC DEBUG: Starting enableBiometricLogin with email: $email');
+      // debugPrint('BIOMETRIC DEBUG: Starting enableBiometricLogin with email: $email');
       
       // First verify biometric is available
       final biometricsAvailable = await isBiometricAvailable();
-      debugPrint('BIOMETRIC DEBUG: Biometric available: $biometricsAvailable');
+      // debugPrint('BIOMETRIC DEBUG: Biometric available: $biometricsAvailable');
       
       if (!biometricsAvailable) {
         throw Exception('Biometric authentication is not available on this device.');
@@ -387,7 +386,7 @@ class AuthRepositoriesImpl implements AuthRepositories {
       
       // Try to validate credentials before storing them
       try {
-        debugPrint('BIOMETRIC DEBUG: Validating credentials before storing');
+        // debugPrint('BIOMETRIC DEBUG: Validating credentials before storing');
         final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
           email: email,
           password: password,
@@ -396,9 +395,9 @@ class AuthRepositoriesImpl implements AuthRepositories {
         if (userCredential.user == null) {
           throw Exception('Failed to validate credentials');
         }
-        debugPrint('BIOMETRIC DEBUG: Credentials validated successfully');
+        // debugPrint('BIOMETRIC DEBUG: Credentials validated successfully');
       } catch (e) {
-        debugPrint('BIOMETRIC DEBUG: Credential validation error: ${e.toString()}');
+        // debugPrint('BIOMETRIC DEBUG: Credential validation error: ${e.toString()}');
         throw Exception('Invalid credentials provided for biometric login. Please try again with correct password.');
       }
       
@@ -407,9 +406,9 @@ class AuthRepositoriesImpl implements AuthRepositories {
       await _secureStorage.write(key: 'auth_password', value: password);
       await _secureStorage.write(key: 'biometric_login_enabled', value: 'true');
       
-      debugPrint('BIOMETRIC DEBUG: Biometric login enabled successfully.');
+      // debugPrint('BIOMETRIC DEBUG: Biometric login enabled successfully.');
     } catch (e) {
-      debugPrint('BIOMETRIC DEBUG: Error enabling biometric login: ${e.toString()}');
+      // debugPrint('BIOMETRIC DEBUG: Error enabling biometric login: ${e.toString()}');
       throw Exception('Failed to enable biometric login: ${e.toString()}');
     }
   }
@@ -417,15 +416,15 @@ class AuthRepositoriesImpl implements AuthRepositories {
   @override
   Future<void> disableBiometricLogin() async {
     try {
-      debugPrint('BIOMETRIC DEBUG: Disabling biometric login');
+      // debugPrint('BIOMETRIC DEBUG: Disabling biometric login');
       // Remove credentials from secure storage
       await _secureStorage.delete(key: 'auth_email');
       await _secureStorage.delete(key: 'auth_password');
       await _secureStorage.delete(key: 'biometric_login_enabled');
       
-      debugPrint('BIOMETRIC DEBUG: Biometric login disabled successfully.');
+      // debugPrint('BIOMETRIC DEBUG: Biometric login disabled successfully.');
     } catch (e) {
-      debugPrint('BIOMETRIC DEBUG: Error disabling biometric login: ${e.toString()}');
+      // debugPrint('BIOMETRIC DEBUG: Error disabling biometric login: ${e.toString()}');
       throw Exception('Failed to disable biometric login: ${e.toString()}');
     }
   }
@@ -436,7 +435,7 @@ class AuthRepositoriesImpl implements AuthRepositories {
       final enabled = await _secureStorage.read(key: 'biometric_login_enabled');
       return enabled == 'true';
     } catch (e) {
-      debugPrint('Error checking if biometric login is enabled: ${e.toString()}');
+      // debugPrint('Error checking if biometric login is enabled: ${e.toString()}');
       return false;
     }
   }
@@ -462,7 +461,7 @@ class AuthRepositoriesImpl implements AuthRepositories {
       final user = await signInWithEmailAndPassword(email, password);
       return user;
     } catch (e) {
-      debugPrint('Error signing in with biometrics: ${e.toString()}');
+      // debugPrint('Error signing in with biometrics: ${e.toString()}');
       throw Exception('Failed to sign in with biometrics: ${e.toString()}');
     }
   }
@@ -501,7 +500,7 @@ class AuthRepositoriesImpl implements AuthRepositories {
         rethrow;
       }
     } catch (e) {
-      debugPrint('Error signing in with stored credentials: ${e.toString()}');
+      // debugPrint('Error signing in with stored credentials: ${e.toString()}');
       throw Exception('Failed to sign in with stored credentials: ${e.toString()}');
     }
   }

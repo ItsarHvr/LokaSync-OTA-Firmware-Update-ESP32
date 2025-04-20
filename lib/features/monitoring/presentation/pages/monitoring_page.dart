@@ -202,8 +202,8 @@ class _MonitoringState extends State<Monitoring> {
         }
       }
     } catch (e) {
-      // TODO: Handle error with a proper error state
-      debugPrint('Error loading monitoring data: ${e.toString()}.');
+      // debugPrint('Error loading monitoring data: ${e.toString()}.');
+      throw Exception('Error loading monitoring data: ${e.toString()}.');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

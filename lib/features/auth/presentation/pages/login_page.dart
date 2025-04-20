@@ -182,15 +182,15 @@ class _LoginState extends State<Login> {
     });
     
     try {
-      debugPrint('BIOMETRIC_AUTH: Starting biometric authentication flow');
+      // debugPrint('BIOMETRIC_AUTH: Starting biometric authentication flow');
       
       // Show a snackbar to make it clear that we're waiting for fingerprint
       _showSnackBar('Please scan your fingerprint', true);
       
       // First authenticate with biometrics at the OS level
-      debugPrint('BIOMETRIC_AUTH: Calling authenticateWithBiometrics()');
+      // debugPrint('BIOMETRIC_AUTH: Calling authenticateWithBiometrics()');
       final authenticated = await _authController.authenticateWithBiometrics();
-      debugPrint('BIOMETRIC_AUTH: Authentication result: $authenticated');
+      // debugPrint('BIOMETRIC_AUTH: Authentication result: $authenticated');
       
       if (!authenticated) {
         if (mounted) {
@@ -203,11 +203,11 @@ class _LoginState extends State<Login> {
       }
       
       // Skip the second biometric check by accessing stored credentials directly
-      debugPrint('BIOMETRIC_AUTH: Authentication successful, attempting to sign in with stored credentials');
+      // debugPrint('BIOMETRIC_AUTH: Authentication successful, attempting to sign in with stored credentials');
       
       try {
         final user = await _authController.signInWithStoredCredentials();
-        debugPrint('BIOMETRIC_AUTH: Sign-in result: ${user != null ? 'Success' : 'Failed'}');
+        // debugPrint('BIOMETRIC_AUTH: Sign-in result: ${user != null ? 'Success' : 'Failed'}');
         
         if (!mounted) return;
         
@@ -219,7 +219,7 @@ class _LoginState extends State<Login> {
           Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
         }
       } catch (credentialError) {
-        debugPrint('BIOMETRIC_AUTH: Credential error: ${credentialError.toString()}');
+        // debugPrint('BIOMETRIC_AUTH: Credential error: ${credentialError.toString()}');
         
         if (!mounted) return;
         
@@ -238,7 +238,7 @@ class _LoginState extends State<Login> {
         }
       }
     } catch (e) {
-      debugPrint('BIOMETRIC_AUTH: Error: ${e.toString()}');
+      // debugPrint('BIOMETRIC_AUTH: Error: ${e.toString()}');
       if (mounted) {
         // Don't show error if user canceled biometric auth
         if (e.toString().contains('User canceled biometric') || 

@@ -96,12 +96,12 @@ class _ProfileState extends State<Profile> {
     
     try {
       // Add debug print to track user loading
-      debugPrint('PROFILE DEBUG: Loading user data...');
+      // debugPrint('PROFILE DEBUG: Loading user data...');
       
       // Wait for user data to be ready before setting state
       await Future.delayed(const Duration(milliseconds: 200));
       final user = _authController.getCurrentUser();
-      debugPrint('PROFILE DEBUG: User from getCurrentUser(): ${user?.uid}');
+      // debugPrint('PROFILE DEBUG: User from getCurrentUser(): ${user?.uid}');
       
       if (user != null && mounted) {
         setState(() {
@@ -110,14 +110,14 @@ class _ProfileState extends State<Profile> {
           _nameController.text = user.fullName;
           _emailController.text = user.email;
         });
-        debugPrint('PROFILE DEBUG: User data set successfully');
+        // debugPrint('PROFILE DEBUG: User data set successfully');
       } else {
-        debugPrint('PROFILE DEBUG: No user found, attempting to reload...');
+        // debugPrint('PROFILE DEBUG: No user found, attempting to reload...');
         // If no user found immediately, wait a bit longer and try again
         await Future.delayed(const Duration(milliseconds: 500));
         
         final retryUser = _authController.getCurrentUser();
-        debugPrint('PROFILE DEBUG: Retry user result: ${retryUser?.uid}');
+        // debugPrint('PROFILE DEBUG: Retry user result: ${retryUser?.uid}');
         
         if (retryUser != null && mounted) {
           setState(() {
@@ -126,14 +126,14 @@ class _ProfileState extends State<Profile> {
             _nameController.text = retryUser.fullName;
             _emailController.text = retryUser.email;
           });
-          debugPrint('PROFILE DEBUG: User data set on retry');
+          // debugPrint('PROFILE DEBUG: User data set on retry');
         } else if (mounted) {
-          debugPrint('PROFILE DEBUG: Still no user data after retry');
+          // debugPrint('PROFILE DEBUG: Still no user data after retry');
           _redirectToLogin();
         }
       }
     } catch (e) {
-      debugPrint('PROFILE DEBUG: Error loading user: ${e.toString()}');
+      // debugPrint('PROFILE DEBUG: Error loading user: ${e.toString()}');
       // Error handling
       if (mounted) {
         _showSnackBar('Error loading profile: ${e.toString()}', false);

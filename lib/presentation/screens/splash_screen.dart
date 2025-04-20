@@ -27,7 +27,7 @@ class _AppSplashScreenState extends State<SplashScreen> {
 
   Future<void> _preloadResourcesInBackground() async {
     try {
-      debugPrint('SPLASH: Starting background preloading');
+      // debugPrint('SPLASH: Starting background preloading');
       
       // Load preferences and auth state in parallel using Future.wait
       final results = await Future.wait([
@@ -49,9 +49,9 @@ class _AppSplashScreenState extends State<SplashScreen> {
       // Minimum delay to avoid visual flicker
       await Future.delayed(const Duration(milliseconds: 500));
       
-      debugPrint('SPLASH: Background preloading complete');
+      // debugPrint('SPLASH: Background preloading complete');
     } catch (e) {
-      debugPrint('SPLASH: Error during preloading: $e');
+      // debugPrint('SPLASH: Error during preloading: $e');
     } finally {
       if (mounted) {
         _navigateToNextScreen();

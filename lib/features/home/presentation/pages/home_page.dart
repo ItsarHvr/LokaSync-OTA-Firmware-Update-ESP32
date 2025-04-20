@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokasync/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:lokasync/features/profile/presentation/pages/profile_page.dart';
 import 'package:lokasync/presentation/widgets/bottom_navbar.dart';
 
 class Home extends StatefulWidget {
@@ -279,8 +278,8 @@ class _HomeState extends State<Home> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      // Navigate to profile
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
+                      // Navigate to profile using named route for consistency
+                      Navigator.pushReplacementNamed(context, '/profile');
                     },
                     child: CircleAvatar(
                       backgroundColor: const Color(0xFF014331),

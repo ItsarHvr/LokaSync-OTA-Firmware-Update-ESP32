@@ -33,15 +33,15 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> {
 
   Future<void> _checkAuthStatus() async {
     try {
-      debugPrint('AUTH_WRAPPER: Checking authentication status');
+      // debugPrint('AUTH_WRAPPER: Checking authentication status');
       
       // First quickly check if user is logged in
       final isLoggedIn = await _authController.isUserLoggedIn();
-      debugPrint('AUTH_WRAPPER: isLoggedIn = $isLoggedIn');
+      // debugPrint('AUTH_WRAPPER: isLoggedIn = $isLoggedIn');
       
       // Only check for biometric if not logged in
       if (!isLoggedIn) {
-        debugPrint('AUTH_WRAPPER: Checking biometric status');
+        // debugPrint('AUTH_WRAPPER: Checking biometric status');
         
         // Run biometric checks in parallel
         final results = await Future.wait([
@@ -51,7 +51,7 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> {
         
         final biometricAvailable = results[0];
         final biometricEnabled = results[1];
-        debugPrint('AUTH_WRAPPER: biometricAvailable = $biometricAvailable, biometricEnabled = $biometricEnabled');
+        // debugPrint('AUTH_WRAPPER: biometricAvailable = $biometricAvailable, biometricEnabled = $biometricEnabled');
         
         if (mounted) {
           setState(() {
@@ -69,7 +69,7 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> {
         });
       }
     } catch (e) {
-      debugPrint('AUTH_WRAPPER: Error checking auth status: $e');
+      // debugPrint('AUTH_WRAPPER: Error checking auth status: $e');
       if (mounted) {
         setState(() {
           _isAuthenticated = false;
