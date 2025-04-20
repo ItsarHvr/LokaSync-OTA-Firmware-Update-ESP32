@@ -245,15 +245,17 @@ class _RegisterState extends State<Register> {
                     controller: _fullNameController,
                     keyboardType: TextInputType.name,
                     textCapitalization: TextCapitalization.words,
+                    cursorColor: Colors.black,
                     decoration: InputDecoration(
                       labelText: 'Nama Lengkap',
+                      labelStyle: const TextStyle(color: Colors.black),
                       prefixIcon: const Icon(Icons.person, color: Color(0xFF014331)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF014331), width: 2),
+                        borderSide: const BorderSide(color: Colors.black, width: 2),
                       ),
                     ),
                     validator: (value) {
@@ -272,15 +274,17 @@ class _RegisterState extends State<Register> {
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
+                    cursorColor: Colors.black,
                     decoration: InputDecoration(
                       labelText: 'Email',
+                      labelStyle: const TextStyle(color: Colors.black),
                       prefixIcon: const Icon(Icons.email, color: Color(0xFF014331)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF014331), width: 2),
+                        borderSide: const BorderSide(color: Colors.black, width: 2),
                       ),
                     ),
                     validator: (value) {
@@ -299,8 +303,10 @@ class _RegisterState extends State<Register> {
                   TextFormField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
+                    cursorColor: Colors.black,
                     decoration: InputDecoration(
                       labelText: 'Password',
+                      labelStyle: const TextStyle(color: Colors.black),
                       prefixIcon: const Icon(Icons.lock, color: Color(0xFF014331)),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -318,7 +324,7 @@ class _RegisterState extends State<Register> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF014331), width: 2),
+                        borderSide: const BorderSide(color: Colors.black, width: 2),
                       ),
                       helperText: 'Min. 8 karakter, huruf kecil & besar, angka, dan simbol.',
                     ),
@@ -378,8 +384,10 @@ class _RegisterState extends State<Register> {
                   TextFormField(
                     controller: _confirmPasswordController,
                     obscureText: !_isConfirmPasswordVisible,
+                    cursorColor: Colors.black,
                     decoration: InputDecoration(
                       labelText: 'Konfirmasi Password',
+                      labelStyle: const TextStyle(color: Colors.black),
                       prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF014331)),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -397,7 +405,7 @@ class _RegisterState extends State<Register> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF014331), width: 2),
+                        borderSide: const BorderSide(color: Colors.black, width: 2),
                       ),
                     ),
                     validator: (value) {

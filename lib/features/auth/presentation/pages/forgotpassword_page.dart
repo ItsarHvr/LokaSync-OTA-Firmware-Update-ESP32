@@ -186,15 +186,17 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
+                    cursorColor: Colors.black,
                     decoration: InputDecoration(
                       labelText: 'Email',
+                      labelStyle: const TextStyle(color: Colors.black),
                       prefixIcon: const Icon(Icons.email, color: Color(0xFF014331)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF014331), width: 2),
+                        borderSide: const BorderSide(color: Colors.black, width: 2),
                       ),
                     ),
                     validator: (value) {

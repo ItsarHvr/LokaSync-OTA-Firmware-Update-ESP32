@@ -570,8 +570,10 @@ class _ProfileState extends State<Profile> {
         return TextFormField(
           controller: _nameController,
           readOnly: !isNameEditable,
+          cursorColor: Colors.black,
           decoration: InputDecoration(
             labelText: 'Full Name',
+            labelStyle: const TextStyle(color: Colors.black),
             prefixIcon: const Icon(Icons.person, color: Color(0xFF014331)),
             suffixIcon: IconButton(
               icon: Icon(
@@ -589,7 +591,7 @@ class _ProfileState extends State<Profile> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF014331), width: 2),
+              borderSide: const BorderSide(color: Colors.black, width: 2),
             ),
           ),
           validator: (value) {
@@ -786,8 +788,10 @@ class _ProfileState extends State<Profile> {
                 TextFormField(
                   controller: currentPassController,
                   obscureText: obscureCurrentPass,
+                  cursorColor: Colors.black,
                   decoration: InputDecoration(
                     labelText: 'Current Password',
+                    labelStyle: const TextStyle(color: Colors.black),
                     prefixIcon: const Icon(Icons.lock, color: Color(0xFF014331)),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -803,6 +807,10 @@ class _ProfileState extends State<Profile> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.black, width: 2),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -811,8 +819,10 @@ class _ProfileState extends State<Profile> {
                 TextFormField(
                   controller: newPassController,
                   obscureText: obscureNewPass,
+                  cursorColor: Colors.black,
                   decoration: InputDecoration(
                     labelText: 'New Password',
+                    labelStyle: const TextStyle(color: Colors.black),
                     prefixIcon: const Icon(Icons.lock_open, color: Color(0xFF014331)),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -828,6 +838,10 @@ class _ProfileState extends State<Profile> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.black, width: 2),
+                    ),
                     helperText: 'Min. 8 characters, uppercase, lowercase, number, symbol.',
                   ),
                 ),
@@ -837,8 +851,10 @@ class _ProfileState extends State<Profile> {
                 TextFormField(
                   controller: confirmPassController,
                   obscureText: obscureConfirmPass,
+                  cursorColor: Colors.black,
                   decoration: InputDecoration(
                     labelText: 'Confirm New Password',
+                    labelStyle: const TextStyle(color: Colors.black),
                     prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF014331)),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -853,6 +869,10 @@ class _ProfileState extends State<Profile> {
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.black, width: 2),
                     ),
                   ),
                 ),
@@ -1043,11 +1063,17 @@ class _ProfileState extends State<Profile> {
                 TextFormField(
                   controller: newEmailController,
                   keyboardType: TextInputType.emailAddress,
+                  cursorColor: Colors.black,
                   decoration: InputDecoration(
                     labelText: 'New Email',
+                    labelStyle: const TextStyle(color: Colors.black),
                     prefixIcon: const Icon(Icons.email, color: Color(0xFF014331)),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.black, width: 2),
                     ),
                   ),
                 ),
@@ -1057,8 +1083,10 @@ class _ProfileState extends State<Profile> {
                 TextFormField(
                   controller: passwordController,
                   obscureText: obscurePassword,
+                  cursorColor: Colors.black,
                   decoration: InputDecoration(
                     labelText: 'Current Password',
+                    labelStyle: const TextStyle(color: Colors.black),
                     prefixIcon: const Icon(Icons.lock, color: Color(0xFF014331)),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -1073,6 +1101,10 @@ class _ProfileState extends State<Profile> {
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.black, width: 2),
                     ),
                   ),
                 ),
@@ -1265,8 +1297,10 @@ class _ProfileState extends State<Profile> {
                 TextFormField(
                   controller: passwordController,
                   obscureText: obscurePassword,
+                  cursorColor: Colors.black,
                   decoration: InputDecoration(
                     labelText: 'Enter Password to Confirm',
+                    labelStyle: const TextStyle(color: Colors.black),
                     prefixIcon: const Icon(Icons.lock, color: Colors.red),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -1285,7 +1319,7 @@ class _ProfileState extends State<Profile> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.red.shade700, width: 2),
+                      borderSide: const BorderSide(color: Colors.black, width: 2),
                     ),
                   ),
                 ),
@@ -1590,8 +1624,10 @@ class _ProfileState extends State<Profile> {
                 TextFormField(
                   controller: passwordController,
                   obscureText: obscurePassword,
+                  cursorColor: Colors.black,
                   decoration: InputDecoration(
                     labelText: 'Password',
+                    labelStyle: const TextStyle(color: Colors.black),
                     errorText: isPasswordIncorrect ? 'Password is incorrect' : null,
                     prefixIcon: const Icon(Icons.lock, color: Color(0xFF014331)),
                     suffixIcon: IconButton(
@@ -1607,6 +1643,10 @@ class _ProfileState extends State<Profile> {
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.black, width: 2),
                     ),
                   ),
                 ),
@@ -1657,7 +1697,9 @@ class _ProfileState extends State<Profile> {
                           }
                           
                           // Password is correct
-                          Navigator.pop(context, passwordController.text);
+                          if (context.mounted) {
+                            Navigator.pop(context, passwordController.text);
+                          }
                         } catch (e) {
                           setState(() {
                             isPasswordIncorrect = true;
