@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 
-# Create your models here.
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, username, full_name, phone_number, password=None):
         if not email:
@@ -36,4 +35,20 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+    
+class DHT22Data(models.Model):
+    temperature = models.FloatField()
+    humidity = models.FloatField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+class LogOTA(models.Model):
+    millis = models.IntegerField()
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+class WaterNodeData(models.Model):
+    temperature = models.FloatField()
+    ppm = models.FloatField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
     
