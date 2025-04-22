@@ -44,12 +44,18 @@ def upload_firmware(request):
         if not os.path.exists('tmp'):
             os.makedirs('tmp')
 
-        with open(path, 'wb+') as f:
-            for chunk in firmware.chunks():
-                f.write(chunk)
+        try:
+            with open(path, 'wb+') as f:
+                for chunk in firmware.chunks():
+                    f.write(chunk)
+        except Exception as e:
+            return JsonResponse({'error': f'Error while saving file: {str(e)}'},status=500)
 
         folder_id = "1pVjAcP7A9dlvLBrqNhE-SXJXESsLXXR5"
-        url = upload_to_drive(path, firmware.name)
+        try:
+            url = upload_to_drive(path, firmware.name, folder_id)
+        except Exception as e:
+            return JsonResponse({'error': f'Error uploading to Google Drive: {str(e)}'})
 
         node = request.POST.get('node')
 
