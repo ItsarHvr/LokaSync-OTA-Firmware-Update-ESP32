@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Firmware</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Upload Firmware</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="firmware">Firmware File</label>
+                <input type="file" class="form-control" id="firmware" name="firmware" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="node">Select Node for Firmware Update</label>
+                <select class="form-control" id="node" name="node" required>
+                    <option value="Node-DHT">Node-DHT</option>
+                    <option value="Water_Node">Water_Node</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Upload and Send</button>
+        </form>
+
+        <div id="responseMessage" class="mt-3"></div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            let formData = new FormData();
+            formData.append("firmware", document.getElementById('firmware').files[0]);
+            formData.append("node", document.getElementById('node').value);
+
+            // URL endpoint untuk API upload firmware
+            fetch('/api/upload-firmware/', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Tampilkan pesan sukses jika berhasil
+                document.getElementById('responseMessage').innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+            })
+            .catch(error => {
+                // Tampilkan pesan error jika gagal
+                document.getElementById('responseMessage').innerHTML = `<div class="alert alert-danger">Error: ${error}</div>`;
+            });
+        });
+    </script>
+</body>
+</html>

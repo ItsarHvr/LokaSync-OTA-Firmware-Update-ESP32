@@ -6,13 +6,16 @@ from googleapiclient.http import MediaFileUpload
 SERVICE_ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), 'credentials.json')
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
-def upload_to_drive(filepath, filename):
+def upload_to_drive(filepath, filename, folder_id=None):
     credentials = service_account.Credentials.from_service_account_file(
         SERVICE_ACCOUNT_FILE, scopes=SCOPES
     )
     service = build('drive', 'v3', credentials=credentials)
 
-    file_metadata = {'name': filename}
+    file_metadata = {
+        'name': filename,
+        'parents': [folder_id] if folder_id else []
+        }
     media = MediaFileUpload(filepath, resumable=True)
     file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
 

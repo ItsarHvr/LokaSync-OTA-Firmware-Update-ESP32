@@ -1,6 +1,7 @@
 import re
 from rest_framework import serializers
 from .models import CustomUser
+from .models import DHT22Data, LogOTA, WaterNodeData
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,3 +25,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             user = CustomUser.objects.create_user(**validated_data)
             return user
 
+class LogOTASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LogOTA
+        fields = '__all__'

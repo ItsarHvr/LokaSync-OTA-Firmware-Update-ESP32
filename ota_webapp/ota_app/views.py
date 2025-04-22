@@ -1,4 +1,6 @@
+import os
 import json
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
 from django.http import JsonResponse
 from .drive_helper import upload_to_drive
@@ -10,8 +12,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.authtoken.models import Token
+from rest_framework.views import APIView
 from .models import CustomUser
-from .serializers import CustomUserSerializer
+from .serializers import CustomUserSerializer, LogOTASerializer
 
 @api_view(['POST'])
 def register(request):
@@ -32,23 +35,39 @@ def login(request):
         return Response({'token': token.key}, status=status.HTTP_200_OK)
     return Response({'error': 'Invalid Credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['POST'])
 def upload_firmware(request):
     if request.method == 'POST' and request.FILES.get('firmware'):
         firmware = request.FILES['firmware']
         path = f'tmp/{firmware.name}'
 
+        if not os.path.exists('tmp'):
+            os.makedirs('tmp')
+
         with open(path, 'wb+') as f:
             for chunk in firmware.chunks():
                 f.write(chunk)
 
+        folder_id = "1pVjAcP7A9dlvLBrqNhE-SXJXESsLXXR5"
         url = upload_to_drive(path, firmware.name)
 
-        topic = request.POST.get('topic')
+        node = request.POST.get('node')
+
+        if node == 'Node-DHT':
+            topic = 'OTA/NODE-DHT'
+        elif node == 'Water_Node':
+            topic = 'OTA/Water_Node'
+        else:
+            return JsonResponse({'error': 'Invalid node Selected'}, status=400)
+
         payload = json.dumps({'url': url})
         publish.single(topic, payload, hostname="broker.emqx.io")
 
         return JsonResponse({'message': 'Uploaded & URL sent', 'url':url})
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+def upload_firmware_view(request):
+    return render(request, 'upload_firmware.html')
 
 def get_dht22_data(request):
     data = DHT22Data.objects.order_by('-timestamp')[:10]

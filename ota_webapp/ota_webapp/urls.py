@@ -23,6 +23,6 @@ def home(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/auth/', include('ota_app.urls')),
+    path('api/', include('ota_app.urls')),
     path('', home),  # Add this line for root URL
 ]

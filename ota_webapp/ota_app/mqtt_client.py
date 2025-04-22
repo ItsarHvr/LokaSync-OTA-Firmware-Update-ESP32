@@ -2,6 +2,7 @@ import json
 import paho.mqtt.client as mqtt
 import threading
 from .models import DHT22Data, LogOTA, WaterNodeData
+import traceback
 
 BROKER_ADDRESS = "broker.emqx.io"
 BROKER_PORT = 1883
@@ -9,7 +10,7 @@ BROKER_PORT = 1883
 TOPICS = [
     ("sensor/DHT22", 0),
     ("OTA/Node-DHT", 0),
-    ("log/Firmware_Update", 0),
+    ("Pollux/log/Firmware_Update", 0),
     ("sensor/temperature", 0),
     ("OTA/Water_Node", 0),
 ]
@@ -31,7 +32,7 @@ def on_message(client, userdata, msg):
                 temperature=data.get("temp", 0),
                 humidity=data.get("hum", 0),
             )
-        elif topic == "log/Firmware_Update":
+        elif topic == "Pollux/log/Firmware_Update":
             LogOTA.objects.create(
                 millis=data.get("millis", 0),
                 message=data.get("message", ""),
@@ -51,6 +52,11 @@ def start_mqtt():
 
     client.connect(BROKER_ADDRESS, BROKER_PORT, 60)
 
-    thread = threading.Thread(target=client.loop_forever)
+    thread = threading.Thread(target=client.loop_forever, name="MQTTThread")
     thread.daemon = True
     thread.start()
+
+#def start_mqtt():
+#    print("🚀 MQTT client started from:")
+#    traceback.print_stack()
+#    ...
