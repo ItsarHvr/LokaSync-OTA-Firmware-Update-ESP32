@@ -10,4 +10,5 @@ urlpatterns= [
     path('api/logs/', views.get_log_data),
     path('api/waternode/', views.get_waternode_data),
     path('up-firmware/', views.upload_firmware_view, name='up_firmware'),
+    path('dashboard/', views.dashboard_view, name='dasboard'),
 ]

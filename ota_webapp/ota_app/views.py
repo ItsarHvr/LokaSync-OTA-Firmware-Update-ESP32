@@ -75,6 +75,9 @@ def upload_firmware(request):
 def upload_firmware_view(request):
     return render(request, 'upload_firmware.html')
 
+def dashboard_view(request):
+    return render(request, 'dashboard.html')
+
 def get_dht22_data(request):
     data = DHT22Data.objects.order_by('-timestamp')[:10]
     return JsonResponse({'data': list(data.values())})

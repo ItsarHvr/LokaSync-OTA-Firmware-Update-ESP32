@@ -1,0 +1,669 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="lokasync-container">
+    <!-- Location Chooser Modal -->
+    <div id="locationModal" class="location-modal">
+        <div class="location-modal-content">
+            <h2>Select Location</h2>
+            <div class="location-grid">
+                <div class="location-item" onclick="selectLocation('Jakarta Greenhouse')">Jakarta Greenhouse</div>
+                <div class="location-item" onclick="selectLocation('Bandung Farm')">Bandung Farm</div>
+                <div class="location-item" onclick="selectLocation('Surabaya Facility')">Surabaya Facility</div>
+                <div class="location-item" onclick="selectLocation('Bali Testing Site')">Bali Testing Site</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <div class="logo-container">
+                <img src="{% static 'images/lokasync_logo.png' %}" alt="LokaSync Logo" class="logo">
+                <h2>LokaSync</h2>
+            </div>
+            <div class="nav-items">
+                <div class="nav-item active" data-page="firmware">
+                    <i class="fas fa-microchip"></i>
+                    <span>Firmware Update</span>
+                </div>
+                <div class="nav-item" data-page="monitoring">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Monitoring</span>
+                </div>
+                <div class="nav-item" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </div>
+            </div>
+            <div class="location-display">
+                <i class="fas fa-map-marker-alt"></i>
+                <span id="current-location">Jakarta Greenhouse</span>
+                <button id="change-location-btn">Change</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Firmware Update Page -->
+            <div id="firmware-page" class="content-page active">
+                <div class="page-header">
+                    <h1>Firmware Update Management</h1>
+                    <p>Upload and manage OTA firmware for your IoT devices</p>
+                </div>
+
+                <div class="upload-section">
+                    <div class="section-header">
+                        <h2>Upload New Firmware</h2>
+                    </div>
+                    <div class="topic-selector">
+                        <label for="topic-select">Select Topic:</label>
+                        <select id="topic-select">
+                            <option value="JakartaGreenhouse/OTA/Node_DHT22">JakartaGreenhouse/OTA/Node_DHT22</option>
+                            <option value="JakartaGreenhouse/OTA/Node_Water">JakartaGreenhouse/OTA/Node_Water</option>
+                            <option value="BandungFarm/OTA/Node_DHT22">BandungFarm/OTA/Node_DHT22</option>
+                            <option value="BandungFarm/OTA/Node_Water">BandungFarm/OTA/Node_Water</option>
+                        </select>
+                    </div>
+                    
+                    <div class="upload-box" id="firmware-dropzone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag & Drop Firmware File Here</p>
+                        <p>or</p>
+                        <button class="browse-btn">Browse Files</button>
+                        <input type="file" id="firmware-file" hidden>
+                    </div>
+
+                    <div class="upload-info">
+                        <div class="info-item">
+                            <label for="version-input">Version:</label>
+                            <input type="text" id="version-input" placeholder="e.g., 1.0.3">
+                        </div>
+                        <div class="info-item">
+                            <label for="description-input">Description:</label>
+                            <textarea id="description-input" placeholder="Describe changes in this version"></textarea>
+                        </div>
+                        <button class="upload-btn" id="upload-firmware-btn">Upload Firmware</button>
+                    </div>
+                </div>
+
+                <div class="version-history">
+                    <div class="section-header">
+                        <h2>Version History</h2>
+                        <select id="history-topic-filter">
+                            <option value="all">All Topics</option>
+                            <option value="JakartaGreenhouse/OTA/Node_DHT22">JakartaGreenhouse/OTA/Node_DHT22</option>
+                            <option value="JakartaGreenhouse/OTA/Node_Water">JakartaGreenhouse/OTA/Node_Water</option>
+                        </select>
+                    </div>
+                    <div class="version-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Version</th>
+                                    <th>Topic</th>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1.0.2</td>
+                                    <td>JakartaGreenhouse/OTA/Node_DHT22</td>
+                                    <td>2025-04-15</td>
+                                    <td>Improved power management and stability</td>
+                                    <td>
+                                        <button class="action-btn download-btn"><i class="fas fa-download"></i></button>
+                                        <button class="action-btn deploy-btn"><i class="fas fa-rocket"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>1.0.1</td>
+                                    <td>JakartaGreenhouse/OTA/Node_DHT22</td>
+                                    <td>2025-04-10</td>
+                                    <td>Fixed sensor reading accuracy</td>
+                                    <td>
+                                        <button class="action-btn download-btn"><i class="fas fa-download"></i></button>
+                                        <button class="action-btn deploy-btn"><i class="fas fa-rocket"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>1.0.0</td>
+                                    <td>JakartaGreenhouse/OTA/Node_DHT22</td>
+                                    <td>2025-04-01</td>
+                                    <td>Initial release</td>
+                                    <td>
+                                        <button class="action-btn download-btn"><i class="fas fa-download"></i></button>
+                                        <button class="action-btn deploy-btn"><i class="fas fa-rocket"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monitoring Page -->
+            <div id="monitoring-page" class="content-page">
+                <div class="page-header">
+                    <h1>Node Monitoring</h1>
+                    <p>Monitor and analyze data from your IoT devices</p>
+                </div>
+
+                <div class="monitoring-selector">
+                    <div class="selector-item">
+                        <label>Node Type:</label>
+                        <div class="selector-options">
+                            <div class="selector-option active" data-type="dht">Node-DHT22</div>
+                            <div class="selector-option" data-type="water">Node-Water</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="node-grid" id="dht-nodes">
+                    <div class="node-grid-header">
+                        <h3>DHT22 Nodes</h3>
+                        <button class="download-log-btn">Download All Logs</button>
+                    </div>
+                    <div class="node-grid-items">
+                        <div class="node-item" data-node="DHT-n1">
+                            <div class="node-header">
+                                <h4>DHT-n1</h4>
+                                <span class="status online">Online</span>
+                            </div>
+                            <div class="node-preview">
+                                <div class="preview-data">
+                                    <div class="data-item">
+                                        <span class="label">Temp</span>
+                                        <span class="value">27.5°C</span>
+                                    </div>
+                                    <div class="data-item">
+                                        <span class="label">Humidity</span>
+                                        <span class="value">65%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="node-item" data-node="DHT-n2">
+                            <div class="node-header">
+                                <h4>DHT-n2</h4>
+                                <span class="status online">Online</span>
+                            </div>
+                            <div class="node-preview">
+                                <div class="preview-data">
+                                    <div class="data-item">
+                                        <span class="label">Temp</span>
+                                        <span class="value">28.1°C</span>
+                                    </div>
+                                    <div class="data-item">
+                                        <span class="label">Humidity</span>
+                                        <span class="value">62%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="node-item" data-node="DHT-n3">
+                            <div class="node-header">
+                                <h4>DHT-n3</h4>
+                                <span class="status offline">Offline</span>
+                            </div>
+                            <div class="node-preview">
+                                <div class="preview-data">
+                                    <div class="data-item">
+                                        <span class="label">Temp</span>
+                                        <span class="value">--</span>
+                                    </div>
+                                    <div class="data-item">
+                                        <span class="label">Humidity</span>
+                                        <span class="value">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="node-grid hidden" id="water-nodes">
+                    <div class="node-grid-header">
+                        <h3>Water Nodes</h3>
+                        <button class="download-log-btn">Download All Logs</button>
+                    </div>
+                    <div class="node-grid-items">
+                        <div class="node-item" data-node="Water-n1">
+                            <div class="node-header">
+                                <h4>Water-n1</h4>
+                                <span class="status online">Online</span>
+                            </div>
+                            <div class="node-preview">
+                                <div class="preview-data">
+                                    <div class="data-item">
+                                        <span class="label">Temp</span>
+                                        <span class="value">24.3°C</span>
+                                    </div>
+                                    <div class="data-item">
+                                        <span class="label">PPM</span>
+                                        <span class="value">520</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="node-item" data-node="Water-n2">
+                            <div class="node-header">
+                                <h4>Water-n2</h4>
+                                <span class="status online">Online</span>
+                            </div>
+                            <div class="node-preview">
+                                <div class="preview-data">
+                                    <div class="data-item">
+                                        <span class="label">Temp</span>
+                                        <span class="value">24.8°C</span>
+                                    </div>
+                                    <div class="data-item">
+                                        <span class="label">PPM</span>
+                                        <span class="value">485</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="node-details hidden">
+                    <div class="node-details-header">
+                        <button class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+                        <h3 id="detail-node-name">DHT-n1</h3>
+                        <button class="download-log-btn">Download Log</button>
+                    </div>
+
+                    <div class="charts-container">
+                        <div class="chart-box">
+                            <h4>Temperature History (°C)</h4>
+                            <div class="chart" id="temp-chart"></div>
+                        </div>
+                        <div class="chart-box">
+                            <h4 id="second-param-title">Humidity History (%)</h4>
+                            <div class="chart" id="second-param-chart"></div>
+                        </div>
+                    </div>
+
+                    <div class="data-table">
+                        <h4>Recent Readings</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Temperature</th>
+                                    <th id="data-param-header">Humidity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="readings-table-body">
+                                <!-- Will be populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="settings-page" class="content-page">
+                <div class="page-header">
+                    <h1>Settings</h1>
+                    <p>Configure system parameters and preferences</p>
+                </div>
+                
+                <!-- Settings content goes here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show location modal on page load
+    const locationModal = document.getElementById('locationModal');
+    const changeLocationBtn = document.getElementById('change-location-btn');
+    const currentLocationDisplay = document.getElementById('current-location');
+    
+    // Initially show the location modal
+    locationModal.style.display = 'flex';
+    
+    // Handle location selection
+    window.selectLocation = function(location) {
+        currentLocationDisplay.textContent = location;
+        locationModal.style.display = 'none';
+        
+        // Here you would typically fetch data for the selected location
+        console.log(`Location selected: ${location}`);
+    };
+    
+    // Show location modal when change button is clicked
+    changeLocationBtn.addEventListener('click', function() {
+        locationModal.style.display = 'flex';
+    });
+    
+    // Navigation handling
+    const navItems = document.querySelectorAll('.nav-item');
+    const contentPages = document.querySelectorAll('.content-page');
+    
+    navItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const targetPage = this.getAttribute('data-page');
+            
+            // Update active nav item
+            navItems.forEach(navItem => navItem.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show target page
+            contentPages.forEach(page => {
+                if (page.id === `${targetPage}-page`) {
+                    page.classList.add('active');
+                } else {
+                    page.classList.remove('active');
+                }
+            });
+        });
+    });
+    
+    // Firmware upload handling
+    const dropzone = document.getElementById('firmware-dropzone');
+    const fileInput = document.getElementById('firmware-file');
+    const browseBtn = dropzone.querySelector('.browse-btn');
+    
+    browseBtn.addEventListener('click', function() {
+        fileInput.click();
+    });
+    
+    dropzone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+    });
+    
+    dropzone.addEventListener('dragleave', function() {
+        dropzone.classList.remove('dragover');
+    });
+    
+    dropzone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        
+        // Handle file drop
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    });
+    
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            handleFileSelection(this.files[0]);
+        }
+    });
+    
+    function handleFileSelection(file) {
+        // Update the dropzone to show the selected file
+        const fileDisplay = document.createElement('div');
+        fileDisplay.className = 'selected-file';
+        fileDisplay.innerHTML = `
+            <i class="fas fa-file-code"></i>
+            <span>${file.name}</span>
+            <span class="file-size">${(file.size / 1024).toFixed(2)} KB</span>
+        `;
+        
+        // Clear previous selection and add new one
+        const existingFileDisplay = dropzone.querySelector('.selected-file');
+        if (existingFileDisplay) {
+            dropzone.removeChild(existingFileDisplay);
+        }
+        
+        // Remove default content and add file display
+        dropzone.innerHTML = '';
+        dropzone.appendChild(fileDisplay);
+        dropzone.appendChild(browseBtn);
+        
+        console.log(`File selected: ${file.name}`);
+    }
+    
+    // Upload button handling
+    const uploadBtn = document.getElementById('upload-firmware-btn');
+    uploadBtn.addEventListener('click', function() {
+        const topic = document.getElementById('topic-select').value;
+        const version = document.getElementById('version-input').value;
+        const description = document.getElementById('description-input').value;
+        
+        console.log(`Uploading firmware to ${topic}, version ${version}`);
+        
+        // Here you would typically handle the actual upload
+        // For now, just show an alert
+        alert(`Firmware upload initiated for ${topic}, version ${version}`);
+    });
+    
+    // Monitoring page handling
+    const nodeTypeOptions = document.querySelectorAll('.selector-option');
+    const dhtNodesGrid = document.getElementById('dht-nodes');
+    const waterNodesGrid = document.getElementById('water-nodes');
+    const nodeItems = document.querySelectorAll('.node-item');
+    const nodeDetails = document.querySelector('.node-details');
+    const backBtn = document.querySelector('.back-btn');
+    const detailNodeName = document.getElementById('detail-node-name');
+    const secondParamTitle = document.getElementById('second-param-title');
+    const dataParamHeader = document.getElementById('data-param-header');
+    
+    // Node type selection
+    nodeTypeOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            nodeTypeOptions.forEach(opt => opt.classList.remove('active'));
+            this.classList.add('active');
+            
+            const nodeType = this.getAttribute('data-type');
+            if (nodeType === 'dht') {
+                dhtNodesGrid.classList.remove('hidden');
+                waterNodesGrid.classList.add('hidden');
+            } else {
+                dhtNodesGrid.classList.add('hidden');
+                waterNodesGrid.classList.remove('hidden');
+            }
+            
+            // Hide node details when switching node types
+            nodeDetails.classList.add('hidden');
+        });
+    });
+    
+    // Node selection
+    nodeItems.forEach(node => {
+        node.addEventListener('click', function() {
+            const nodeName = this.getAttribute('data-node');
+            detailNodeName.textContent = nodeName;
+            
+            // Set the appropriate parameter titles based on node type
+            if (nodeName.startsWith('DHT')) {
+                secondParamTitle.textContent = 'Humidity History (%)';
+                dataParamHeader.textContent = 'Humidity';
+            } else {
+                secondParamTitle.textContent = 'PPM History';
+                dataParamHeader.textContent = 'PPM';
+            }
+            
+            // Show node details and hide grid
+            dhtNodesGrid.classList.add('hidden');
+            waterNodesGrid.classList.add('hidden');
+            nodeDetails.classList.remove('hidden');
+            
+            // Generate charts
+            generateCharts(nodeName);
+            generateTableData(nodeName);
+        });
+    });
+    
+    // Back button
+    backBtn.addEventListener('click', function() {
+        nodeDetails.classList.add('hidden');
+        
+        // Show the appropriate grid based on active node type
+        const activeNodeType = document.querySelector('.selector-option.active').getAttribute('data-type');
+        if (activeNodeType === 'dht') {
+            dhtNodesGrid.classList.remove('hidden');
+        } else {
+            waterNodesGrid.classList.remove('hidden');
+        }
+    });
+    
+    // Chart generation
+    function generateCharts(nodeName) {
+        const tempCtx = document.getElementById('temp-chart').getContext('2d');
+        const secondParamCtx = document.getElementById('second-param-chart').getContext('2d');
+        
+        // Generate some dummy data
+        const timestamps = Array.from({length: 24}, (_, i) => {
+            const date = new Date();
+            date.setHours(date.getHours() - (23 - i));
+            return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        });
+        
+        // Temperature data (slightly randomized)
+        const baseTemp = nodeName.startsWith('DHT') ? 27 : 24;
+        const tempData = timestamps.map(() => baseTemp + (Math.random() * 2 - 1));
+        
+        // Second parameter data (humidity or PPM)
+        let secondParamData;
+        let secondParamLabel;
+        
+        if (nodeName.startsWith('DHT')) {
+            secondParamLabel = 'Humidity (%)';
+            secondParamData = timestamps.map(() => 60 + (Math.random() * 10 - 5));
+        } else {
+            secondParamLabel = 'PPM';
+            secondParamData = timestamps.map(() => 500 + (Math.random() * 60 - 30));
+        }
+        
+        // Temperature chart
+        new Chart(tempCtx, {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: 'Temperature (°C)',
+                    data: tempData,
+                    borderColor: '#f5b700',
+                    backgroundColor: 'rgba(245, 183, 0, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: '#eaeaea'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#eaeaea'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#eaeaea'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Second parameter chart
+        new Chart(secondParamCtx, {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: secondParamLabel,
+                    data: secondParamData,
+                    borderColor: '#00b341',
+                    backgroundColor: 'rgba(0, 179, 65, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: '#eaeaea'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#eaeaea'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#eaeaea'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Generate table data
+    function generateTableData(nodeName) {
+        const tableBody = document.getElementById('readings-table-body');
+        tableBody.innerHTML = '';
+        
+        // Generate some dummy data
+        const now = new Date();
+        const baseTemp = nodeName.startsWith('DHT') ? 27 : 24;
+        
+        for (let i = 0; i < 10; i++) {
+            const timestamp = new Date(now);
+            timestamp.setMinutes(now.getMinutes() - (i * 15));
+            
+            const temp = (baseTemp + (Math.random() * 2 - 1)).toFixed(1);
+            let secondParam;
+            
+            if (nodeName.startsWith('DHT')) {
+                secondParam = Math.floor(60 + (Math.random() * 10 - 5)) + '%';
+            } else {
+                secondParam = Math.floor(500 + (Math.random() * 60 - 30));
+            }
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${timestamp.toLocaleString()}</td>
+                <td>${temp}°C</td>
+                <td>${secondParam}</td>
+            `;
+            
+            tableBody.appendChild(row);
+        }
+    }
+});
+</script>
+{% endblock %}
