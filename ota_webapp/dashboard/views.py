@@ -4,4 +4,4 @@ def dashboard_view(request):
     context = {
         'user': request.user,
     }
-    return render(request, 'dashboard.html', context)
+    return render(request, 'dashboard/dashboard.html', context)
