@@ -53,11 +53,11 @@ class InputRegister(BaseModel):
         }
 
 class InputForgotPassword(BaseModel):
-    new_email: EmailStr = Field(pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$')
+    email: EmailStr = Field(pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$')
 
     class Config:
         json_schema_extra = {
             "example": {
-                "new_email": "yournewemail@example.com"
+                "email": "youremail@example.com"
             }
         }

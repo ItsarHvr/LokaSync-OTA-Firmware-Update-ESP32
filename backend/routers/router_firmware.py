@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
-from typing import Optional, Dict
+from typing import Optional
 
 from dtos.dto_firmware import InputFirmware, OutputFirmwarePagination
 from services.service_firmware import ServiceFirmware
@@ -12,7 +12,7 @@ router_firmware = APIRouter(prefix="/api/v1", tags=["Firmware"])
     response_model=OutputFirmwarePagination,
     summary="Get list of available firmwares."
 )
-async def get_all_firmwares(
+async def get_list_firmware(
     node_id: Optional[int] = Query(default=None, ge=1),
     node_location: Optional[str] = Query(default=None, min_length=1, max_length=255),
     page: int = Query(1, ge=1),

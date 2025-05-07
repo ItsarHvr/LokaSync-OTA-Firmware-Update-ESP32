@@ -23,13 +23,13 @@ class ServiceUser:
                 password=new_user.password,
                 first_name=new_user.full_name.split(" ")[0] # Only display first name!.
             )
-            verification_link = await self.user_repository.verify_email(email=created_user.email)
+            email_verification_link = await self.user_repository.verify_email(email=created_user.email)
 
             user_data = {
                 "uid": created_user.uid,
                 "email": created_user.email,
                 "display_name": created_user.display_name,
-                "verification_link": verification_link
+                "email_verification_link": email_verification_link
             }
 
             return JSONResponse(
@@ -70,18 +70,13 @@ class ServiceUser:
     async def forgot_password(self, user: InputForgotPassword) -> dict:
         """ Send a password reset email to the user. """
         try:
-            email_reset_link = await self.user_repository.reset_user_password(new_email=user.new_email)
+            reset_password_link = await self.user_repository.reset_user_password(email=user.email)
 
-            user_data = {
-                "new_email": user.new_email,
-                "reset_password_link": email_reset_link
-            }
-            
             return JSONResponse(
                 status_code=200,
                 content={
                     "message": "Please follow the instructions in the reset password link.",
-                    "user_data": user_data
+                    "reset_password_link": reset_password_link
                 }
             )
         except self.auth.ResetPasswordExceedLimitError:

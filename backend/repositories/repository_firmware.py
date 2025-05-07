@@ -1,5 +1,5 @@
 from firebase_admin import firestore
-from typing import Dict, List, Optional
+from typing import List, Optional
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 from models.model_firmware import Firmware

@@ -5,8 +5,6 @@
 """
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import HTTPException
 
 from dtos.dto_user import InputRegister, InputLogin, InputForgotPassword
 from services.service_user import ServiceUser

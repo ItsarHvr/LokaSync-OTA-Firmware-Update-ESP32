@@ -27,8 +27,8 @@ class UserRepository:
         return self.auth.get_user_by_email(email=email)
     
     # Generate user reset password link.
-    async def reset_user_password(self, new_email: str) -> str:
-        return self.auth.generate_password_reset_link(email=new_email, action_code_settings=None)
+    async def reset_user_password(self, email: str) -> str:
+        return self.auth.generate_password_reset_link(email=email, action_code_settings=None)
 
     # Delete user account.
     async def delete_user(self, uid: str) -> dict:

@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Dict, List, Union, TypedDict
+from pydantic import BaseModel, Field
+from typing import Optional, List, TypedDict
 
 from dtos.dto_common import BasePage
 from models.model_firmware import Firmware
