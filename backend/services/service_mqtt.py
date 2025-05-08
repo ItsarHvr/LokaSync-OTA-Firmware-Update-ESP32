@@ -1,11 +1,20 @@
 import json
 import paho.mqtt.client as mqtt
 import threading
-from .models import DHT22Data, LogOTA, WaterNodeData
-import traceback
+from fastapi import Depends
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import HTTPException
+from firebase_admin import firestore
+from typing import Optional
+from datetime import datetime
+from math import ceil
+from dotenv import load_dotenv
+import os
 
-BROKER_ADDRESS = "broker.emqx.io"
-BROKER_PORT = 1883
+BROKER_ADDRESS = os.getenv("BROKER_ADDRESS")
+BROKER_PORT = int(os.getenv("MQTT_PORT"))
+
+db = firestore.client()
 
 TOPICS = [
     ("sensor/DHT22", 0),
@@ -28,10 +37,8 @@ def on_message(client, userdata, msg):
         topic = msg.topic
 
         if topic == "sensor/DHT22":
-            DHT22Data.objects.create(
-                temperature=data.get("temp", 0),
-                humidity=data.get("hum", 0),
-            )
+            doc_ref = db.collection("log").document("dpk-node1")
+                        
         elif topic == "Pollux/log/Firmware_Update":
             LogOTA.objects.create(
                 millis=data.get("millis", 0),
