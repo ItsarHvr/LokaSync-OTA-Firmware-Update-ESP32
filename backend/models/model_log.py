@@ -3,14 +3,14 @@ from datetime import datetime
 from typing import Any
 
 class Log(BaseModel):
-    _id:int
-    location:str
-    status:bool
-    latest_update:datetime
+    _id:str
+    node_location:str
+    node_status:bool
+    latest_updated:datetime
     first_version:str
     latest_version:str
 
-    @field_validator("terakhir_diperbaharui", mode="before")
+    @field_validator("latest_updated", mode="before")
     @classmethod
     def parse_custom_datetime(cls, v: Any) -> datetime:
         if isinstance(v, str):

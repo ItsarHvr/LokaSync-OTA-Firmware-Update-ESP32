@@ -1,7 +1,8 @@
 import json
 import paho.mqtt.client as mqtt
 import threading
-from fastapi import Depends
+import asyncio
+import os
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
 from firebase_admin import firestore
@@ -9,12 +10,15 @@ from typing import Optional
 from datetime import datetime
 from math import ceil
 from dotenv import load_dotenv
-import os
+
+
+from dtos.dto_log import InputLog
+from repositories.repository_mqtt_log import MQTTLogRepository
+
+load_dotenv()
 
 BROKER_ADDRESS = os.getenv("BROKER_ADDRESS")
 BROKER_PORT = int(os.getenv("MQTT_PORT"))
-
-db = firestore.client()
 
 TOPICS = [
     ("sensor/DHT22", 0),
@@ -23,6 +27,8 @@ TOPICS = [
     ("sensor/temperature", 0),
     ("OTA/Water_Node", 0),
 ]
+
+loop = asyncio.get_event_loop()
 
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
@@ -36,23 +42,36 @@ def on_message(client, userdata, msg):
         data = json.loads(msg.payload.decode())
         topic = msg.topic
 
-        if topic == "sensor/DHT22":
-            doc_ref = db.collection("log").document("dpk-node1")
+        if topic == "Pollux/log/Firmware_Update":
+            asyncio.run_coroutine_threadsafe(add_log(data), loop)
                         
-        elif topic == "Pollux/log/Firmware_Update":
-            LogOTA.objects.create(
-                millis=data.get("millis", 0),
-                message=data.get("message", ""),
-            )
+        elif topic == "Pollux/log/Firmware":
+            pass
         elif topic == "sensor/temperature":
-            WaterNodeData.objects.create(
-                temperature=data.get("temp", 0),
-                ppm=data.get("ppm", 0),
-            )
+            pass
     except Exception as e:
         print("MQTT Data Error", e)
 
+async def add_log(payload: dict):
+    repository_mqtt_log = MQTTLogRepository()
+    required_keys = ["node_name", "node_location", "node_status", "first_version", "latest_version"]
+    if all(k in payload for k in required_keys):
+        node_status = True if payload["node_status"] == "active" else False
+
+        input_log = InputLog(
+            node_location=payload["node_location"],
+            node_status=node_status,
+            first_version=payload["first_version"],
+            latest_version=payload["latest_version"]
+        )
+        await repository_mqtt_log.add_log(input_log, node_name=payload["node_name"])
+    else:
+        print("Payload tidak valid atau field kurang")
+
+
 def start_mqtt():
+    db = firestore.client()
+
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
