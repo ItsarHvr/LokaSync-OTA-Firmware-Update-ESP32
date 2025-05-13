@@ -87,15 +87,15 @@ void performOTAUpdate(String firmwareURL) {
   http.addHeader("User-Agent", "ESP32");
   int httpCode = http.GET();
 
-  if (httpCode == 302 || httpCode == 303) {
-    String redirectURL = http.getLocation();
-    publishJsonLog("ota", "🔁 Redirected", [redirectURL](JsonObject obj) {
-      obj["redirectURL"] = redirectURL;
-    });
-    http.end();
-    http.begin(redirectURL);
-    httpCode = http.GET();
-  }
+if (httpCode == 302 || httpCode == 303) {
+  String redirectURL = http.getLocation();
+  StaticJsonDocument<128> redirectDoc;
+  redirectDoc["redirectURL"] = redirectURL;
+  publishJsonLog("ota", "🔁 Redirected", redirectDoc.as<JsonObject>());
+  http.end();
+  http.begin(redirectURL);
+  httpCode = http.GET();
+}
 
   if (httpCode != HTTP_CODE_OK) {
     publishJsonLog("ota", "❌ Failed to download firmware (bad HTTP code)");
