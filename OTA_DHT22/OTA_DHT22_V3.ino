@@ -87,15 +87,15 @@ void performOTAUpdate(String firmwareURL) {
   http.addHeader("User-Agent", "ESP32");
   int httpCode = http.GET();
 
-if (httpCode == 302 || httpCode == 303) {
-  String redirectURL = http.getLocation();
-  StaticJsonDocument<128> redirectDoc;
-  redirectDoc["redirectURL"] = redirectURL;
-  publishJsonLog("ota", "🔁 Redirected", redirectDoc.as<JsonObject>());
-  http.end();
-  http.begin(redirectURL);
-  httpCode = http.GET();
-}
+  if (httpCode == 302 || httpCode == 303) {
+    String redirectURL = http.getLocation();
+    StaticJsonDocument<128> redirectDoc;
+    redirectDoc["redirectURL"] = redirectURL;
+    publishJsonLog("ota", "🔁 Redirected", redirectDoc.as<JsonObject>());
+    http.end();
+    http.begin(redirectURL);
+    httpCode = http.GET();
+  }
 
   if (httpCode != HTTP_CODE_OK) {
     publishJsonLog("ota", "❌ Failed to download firmware (bad HTTP code)");
@@ -121,7 +121,21 @@ if (httpCode == 302 || httpCode == 303) {
   }
 
   stream = http.getStreamPtr();
+
+  // --- Measure download time ---
+  unsigned long startTime = millis();
   size_t written = Update.writeStream(*stream);
+  unsigned long endTime = millis();
+  float durationSec = (endTime - startTime) / 1000.0;
+  float speedKBps = (written / 1024.0) / durationSec;
+
+  // Log download speed and time
+  StaticJsonDocument<128> speedDoc;
+  speedDoc["bytes"] = written;
+  speedDoc["seconds"] = durationSec;
+  speedDoc["speed_kbps"] = speedKBps;
+  publishJsonLog("ota", "⏱️ Download speed and time", speedDoc.as<JsonObject>());
+  // --- End measure ---
 
   if (written != contentLength) {
     StaticJsonDocument<64> mismatch;
