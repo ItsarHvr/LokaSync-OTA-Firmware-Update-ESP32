@@ -5,6 +5,7 @@ from firebase_admin import credentials
 
 from routers.router_user import router_user
 from routers.router_firmware import router_firmware
+from routers.router_log import router_log
 from services.service_mqtt import start_mqtt
 
 app = FastAPI(
@@ -29,5 +30,6 @@ else:
 # Include the router for user auth.
 app.include_router(router_user)
 app.include_router(router_firmware)
+app.include_router(router_log)
 
 start_mqtt()
