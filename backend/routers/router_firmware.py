@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from typing import Optional
 
-from dtos.dto_firmware import InputFirmware, OutputFirmwarePagination
+from dtos.dto_firmware import InputFirmware, UploadFirmwareForm, OutputFirmwarePagination
 from services.service_firmware import ServiceFirmware
 
 router_firmware = APIRouter(prefix="/api/v1", tags=["Firmware"])
@@ -28,12 +28,27 @@ async def get_list_firmware(
     return response_get
 
 @router_firmware.post("/firmware/add")
-async def add_firmware(firmware: InputFirmware):
-    return JSONResponse(status_code=200, content={"message": "Add firmware successfully."})
+async def add_firmware(
+    form: UploadFirmwareForm = Depends(),
+    service: ServiceFirmware = Depends()
+):
+    try:
+        await service.add_firmware(form)
+        return JSONResponse(status_code=200, content={"message": "Add firmware successfully."})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})    
 
-@router_firmware.put("/firmware/update/{node_id}")
-async def update_firmware(node_id: str, firmware: InputFirmware):
-    return JSONResponse(status_code=200, content={"message": "Update firmware successfully."})
+@router_firmware.put("/firmware/update")
+async def update_firmware(
+    form: UploadFirmwareForm = Depends(),
+    service_firmware: ServiceFirmware = Depends()
+):
+    try:
+        result = await service_firmware.update_firmware(node_id, form)
+        return JSONResponse(status_code=200, content={"message": "Update firmware successfully."})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+    
 
 @router_firmware.delete("/firmware/delete/{node_id}")
 async def delete_firmware(node_id: str, firmware: InputFirmware):

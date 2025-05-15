@@ -16,8 +16,19 @@ class MonitoringRepository:
         page: int = 1,
         per_page: int = 5
     ) -> List[Monitoring]:
-        query = self.monitoring_ref
+        # 1. Make filter
+        filter_query = {}
+        if node_name:
+            filter_query["node_name"] = node_name
         
-        # 1. Collect filter data if any.
-        if node_name is not None:
-            query = query.where(filter=FieldFilter("node_id", "==", node_name))
+        # 2. set offset and limit
+        offset = (page - 1) * per_page
+        
+        # 3. Query to MongoDB
+        result = self.monitoring_ref.find(filter_query)\
+            .skip(offset)\
+            .limit(per_page)\
+            .sort("timestamp", -1) #sort by timestamp descending
+            
+        #Convert to model
+        return [Monitoring(**doc) for doc in result]

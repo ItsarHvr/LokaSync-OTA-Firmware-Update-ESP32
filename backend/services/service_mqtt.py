@@ -17,7 +17,7 @@ from repositories.repository_mqtt_log import MQTTLogRepository
 
 load_dotenv()
 
-BROKER_ADDRESS = os.getenv("BROKER_ADDRESS")
+BROKER_ADDRESS = os.getenv("MQTT_ADDRESS")
 BROKER_PORT = int(os.getenv("MQTT_PORT"))
 
 TOPICS = [

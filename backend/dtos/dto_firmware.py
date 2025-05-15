@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, TypedDict
+from fastapi import Form, UploadFile, File
 
 from dtos.dto_common import BasePage
 from models.model_firmware import Firmware
@@ -23,6 +24,29 @@ class InputFirmware(BaseModel):
             }
         }
 
+class UploadFirmwareForm:
+    def __init__(
+        self,
+        firmware_version: str = Form(...),
+        node_location : str = Form(...),
+        node_id: int = Form(...),
+        firmware_description : Optional[str] = Form(None),
+        firmwarefile : UploadFile = File(...)
+    ):
+        self.firmware_version = firmware_version
+        self.node_id = node_id
+        self.node_location = node_location
+        self.firmware_description = firmware_description
+        self.firmwarefile = firmwarefile
+        
+    def to_dto(self, firmware_url: str) -> InputFirmware:
+        return InputFirmware(
+            firmware_description=self.firmware_description,
+            firmware_version=self.firmware_version,
+            firmware_url=firmware_url,
+            node_id=self.node_id,
+            node_location=self.node_location
+        )
 
 class FilterOptions(TypedDict):
     node_id: List[int]

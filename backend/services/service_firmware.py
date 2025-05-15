@@ -1,19 +1,25 @@
-from fastapi import Depends
+import os
+import json
+from dotenv import load_dotenv
+import paho.mqtt.publish as publish
+from fastapi import Depends, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
 from firebase_admin import firestore
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from math import ceil
 
-from dtos.dto_firmware import OutputFirmwarePagination
+from services.service_drive import upload_to_drive
+from dtos.dto_firmware import InputFirmware, UploadFirmwareForm, OutputFirmwarePagination
 from repositories.repository_firmware import FirmwareRepository
 
-
+MQTT_ADDRESS = os.getenv("MQTT_ADDRESS")
 class ServiceFirmware:
     def __init__(self, firmware_repository: FirmwareRepository = Depends()):
         self.db = firestore.client().collection("firmware")
         self.firmware_repository = firmware_repository
+        self.folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
 
     async def get_list_firmware(
         self,
@@ -54,3 +60,44 @@ class ServiceFirmware:
             )
         except Exception as e:
             return HTTPException(status_code=500, detail=str(e))
+        
+    async def add_firmware(self, form: UploadFirmwareForm):
+        filename = form.firmwarefile.filename
+        save_path = f"tmp/{filename}"
+        
+        if not os.path.exists("tmp"):
+            os.makedirs("tmp")
+            
+        try:
+            with open(save_path, "wb+") as f:
+                content = await form.firmwarefile.read()
+                f.write(content)
+        except Exception as e:
+            raise Exception(f"Gagal menyimpan file: {str(e)}")
+        
+        #Upload Ke GDrive
+        try:
+            firmware_url = upload_to_drive(save_path, filename, self.folder_id)
+        except Exception as e:
+            raise Exception(f"Gagal Upload ke GDrive: {str(e)}")
+        
+        
+        firmware_dto = form.to_dto(firmware_url)
+        firmware_data = firmware_dto.model_dump()
+        firmware_data["latest_updated"] = datetime.now(timezone.utc)
+        
+        #Publish ke MQTT
+        try:
+            topic = "LokaSync/Firmware"
+            payload = json.dumps({"url": firmware_url})
+            publish.single(topic, payload, hostname=MQTT_ADDRESS)
+        except Exception as e:
+            raise Exception(f"Gagal Mengirim ke MQTT: {str(e)}")
+        
+    async def update_firmware(self, node_id: str, form: UploadFirmwareForm):
+    # Dummy atau implementasi logika update
+        return True
+
+    async def delete_firmware(self, node_id: str):
+        # Dummy atau implementasi logika delete
+        return True
