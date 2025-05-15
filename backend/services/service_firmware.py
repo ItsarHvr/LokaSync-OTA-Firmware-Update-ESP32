@@ -89,7 +89,7 @@ class ServiceFirmware:
         
         #Publish ke MQTT
         try:
-            topic = "LokaSync/Firmware"
+            topic = "LokaSync/CloudOTA/Firmware"
             payload = json.dumps({"url": firmware_url})
             publish.single(topic, payload, hostname=MQTT_ADDRESS)
         except Exception as e:

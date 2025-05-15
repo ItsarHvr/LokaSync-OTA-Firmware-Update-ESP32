@@ -21,11 +21,10 @@ BROKER_ADDRESS = os.getenv("MQTT_ADDRESS")
 BROKER_PORT = int(os.getenv("MQTT_PORT"))
 
 TOPICS = [
-    ("sensor/DHT22", 0),
     ("OTA/Node-DHT", 0),
     ("Pollux/log/Firmware_Update", 0),
-    ("sensor/temperature", 0),
     ("OTA/Water_Node", 0),
+    ("LokaSync/CloudOTA/Firmware", 0)
 ]
 
 loop = asyncio.get_event_loop()
