@@ -19,7 +19,8 @@ class ServiceFirmware:
     def __init__(self, firmware_repository: FirmwareRepository = Depends()):
         self.db = firestore.client().collection("firmware")
         self.firmware_repository = firmware_repository
-        self.folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
+        self.folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "").strip()
+        print("DEBUG folder_id:", repr(self.folder_id))
 
     async def get_list_firmware(
         self,
