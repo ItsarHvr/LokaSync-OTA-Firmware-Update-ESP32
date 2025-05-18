@@ -5,19 +5,28 @@ import paho.mqtt.publish as publish
 from fastapi import Depends, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
-from firebase_admin import firestore
 from typing import Optional
 from datetime import datetime, timezone
 from math import ceil
+from bson import ObjectId
 
+from motor.motor_asyncio import AsyncIOMotorClient
 from services.service_drive import upload_to_drive
 from dtos.dto_firmware import InputFirmware, UploadFirmwareForm, OutputFirmwarePagination
 from repositories.repository_firmware import FirmwareRepository
 
+load_dotenv()
+
+MONGO_URL = os.getenv("MONGO_URL")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
 MQTT_ADDRESS = os.getenv("MQTT_ADDRESS")
+
+client = AsyncIOMotorClient(MONGO_URL)
+mongo_db = client[MONGO_DB_NAME]
+firmware_collection = mongo_db["firmware"]
+
 class ServiceFirmware:
     def __init__(self, firmware_repository: FirmwareRepository = Depends()):
-        self.db = firestore.client().collection("firmware")
         self.firmware_repository = firmware_repository
         self.folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "").strip()
         print("DEBUG folder_id:", repr(self.folder_id))
@@ -86,6 +95,17 @@ class ServiceFirmware:
         firmware_dto = form.to_dto(firmware_url)
         firmware_data = firmware_dto.model_dump()
         firmware_data["latest_updated"] = datetime.now(timezone.utc)
+
+        #Make node_name
+        node_location = firmware_data.get("node_location", "Unknown")
+        node_id = firmware_data.get("node_id", "0")
+        firmware_data["node_name"] = f"{node_location}-node{node_id}"
+
+        #Input to MongoDB
+        try:
+            await firmware_collection.insert_one(firmware_data)
+        except Exception as e:
+            raise Exception(f"Gagal input ke MongoDB: {str(e)}")
         
         #Publish ke MQTT
         try:

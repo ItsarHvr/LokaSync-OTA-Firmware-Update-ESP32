@@ -54,5 +54,9 @@ class FilterOptions(TypedDict):
 
 
 class OutputFirmwarePagination(BasePage):
+    page: int
+    per_page: int
+    total_data: int
+    total_page: int
     filter_options: FilterOptions = Field(default_factory=lambda: {"node_id": [], "node_location": []})
     firmware_data: List[Firmware] = Field(default_factory=list)
