@@ -44,7 +44,7 @@ async def update_firmware(
     service_firmware: ServiceFirmware = Depends()
 ):
     try:
-        result = await service_firmware.update_firmware(node_id, form)
+        result = await service_firmware.update_firmware( form)
         return JSONResponse(status_code=200, content={"message": "Update firmware successfully."})
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
