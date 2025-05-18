@@ -10,3 +10,4 @@ class Firmware(BaseModel):
     latest_updated: datetime
     node_id: int
     node_location: str
+    node_name: str

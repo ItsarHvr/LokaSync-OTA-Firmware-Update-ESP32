@@ -25,8 +25,11 @@ client = AsyncIOMotorClient(MONGO_URL)
 mongo_db = client[MONGO_DB_NAME]
 firmware_collection = mongo_db["firmware"]
 
+def get_firmware_repository():
+    return FirmwareRepository(firmware_collection)
+
 class ServiceFirmware:
-    def __init__(self, firmware_repository: FirmwareRepository = Depends()):
+    def __init__(self, firmware_repository: FirmwareRepository = Depends(get_firmware_repository)):
         self.firmware_repository = firmware_repository
         self.folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "").strip()
         print("DEBUG folder_id:", repr(self.folder_id))
@@ -37,10 +40,10 @@ class ServiceFirmware:
         node_location: Optional[str] = None,
         page: int = 1,
         per_page: int = 5
-    ) -> OutputFirmwarePagination | dict:
+    ) -> OutputFirmwarePagination:
         try:
             # 1. Data firmware
-            list_firmware: list = await self.firmware_repository.get_list_firmware(
+            list_firmware = await self.firmware_repository.get_list_firmware(
                 page=page,
                 per_page=per_page,
                 node_id=node_id,
@@ -48,16 +51,16 @@ class ServiceFirmware:
             )
 
             # 2. Total data
-            total_data: int = await self.firmware_repository.count_list_firmware(
+            total_data = await self.firmware_repository.count_list_firmware(
                 node_id=node_id,
                 node_location=node_location
             )
 
             # 3. Total page
-            total_page: int = ceil(total_data / per_page) if total_data else 1
+            total_page = ceil(total_data / per_page) if total_data else 1
 
             # 4. Get filter options
-            filter_options: dict = await self.firmware_repository.get_filter_options()
+            filter_options = await self.firmware_repository.get_filter_options()
 
             # 5. Return response
             return OutputFirmwarePagination(
@@ -69,7 +72,7 @@ class ServiceFirmware:
                 firmware_data=list_firmware
             )
         except Exception as e:
-            return HTTPException(status_code=500, detail=str(e))
+            return HTTPException(status_code=500, detail=f"Gagal mengambil data firmware: {str(e)}")
         
     async def add_firmware(self, form: UploadFirmwareForm):
         filename = form.firmwarefile.filename
