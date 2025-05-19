@@ -12,7 +12,7 @@ from bson import ObjectId
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from services.service_drive import upload_to_drive
-from dtos.dto_firmware import InputFirmware, UploadFirmwareForm, OutputFirmwarePagination
+from dtos.dto_firmware import UploadFirmwareForm, UpdateFirmwareForm, OutputFirmwarePagination
 from repositories.repository_firmware import FirmwareRepository
 
 load_dotenv()
@@ -123,8 +123,21 @@ class ServiceFirmware:
         except Exception as e:
             raise Exception(f"Gagal Mengirim ke MQTT: {str(e)}")
         
-    async def update_firmware(self, node_id: str, form: UploadFirmwareForm):
-    # Dummy atau implementasi logika update
+    async def update_firmware(self, node_name: str, form: UpdateFirmwareForm):
+        filename = form.firmwarefile.filename
+        save_path = f"tmp/{filename}"
+        
+        if not os.path.exists("tmp"):
+            os.makedirs("tmp")
+        
+        try:
+            with open(save_path, "wb+") as f:
+                content = await form.firmwarefile.read()
+                f.write(content)
+        except Exception as e:
+            raise Exception(f"Gagal menyimpan file: {str(e)}")
+            
+        
         return True
 
     async def delete_firmware(self, node_id: str):

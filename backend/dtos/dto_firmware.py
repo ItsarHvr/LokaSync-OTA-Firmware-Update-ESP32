@@ -33,13 +33,13 @@ class UploadFirmwareForm:
         node_id: int = Form(...),
         firmware_description : str = Form(...),
         sensor_type : str = Form(...),
-        firmwarefile : UploadFile = File(...)
+        firmware_file : UploadFile = File(...)
     ):
         self.firmware_version = firmware_version
         self.node_id = node_id
         self.node_location = node_location
         self.firmware_description = firmware_description
-        self.firmwarefile = firmwarefile
+        self.firmware_file = firmware_file
         self.sensor_type = sensor_type
         
     def to_dto(self, firmware_url: str) -> InputFirmware:
@@ -51,11 +51,25 @@ class UploadFirmwareForm:
             node_location=self.node_location,
             sensor_type=self.sensor_type
         )
+        
+class UpdateFirmwareForm:
+    def __init__(
+        self,
+        firmware_version: str = Form(...),
+        firmware_file : UploadFile = File(...)
+    ):
+        self.firmware_version = firmware_version
+        self.firmware_file = firmware_file
+        
+    def to_dto(self, firmware_url: str) -> InputFirmware:
+        return InputFirmware(
+            firmware_version=self.firmware_version,
+            firmware_url=firmware_url
+        )
 
 class FilterOptions(TypedDict):
     node_id: List[int]
     node_location: List[str]
-
 
 class OutputFirmwarePagination(BasePage):
     page: int
