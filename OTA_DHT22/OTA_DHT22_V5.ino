@@ -19,7 +19,7 @@ const char* topic_log = "/LogOTAUpdateLokaSync";
 const char* topic_ota = "/OTALokaSyncURL";
 
 const char* NODE_LOCATION = "depok";
-const char* NODE_ID = "1";
+const int NODE_ID = 1;
 const char* CURRENT_VERSION = "1.0.1";
 const char* NODE_DESCRIPTION = "DHT sensor node in Depok Greenhouse";
 
@@ -135,7 +135,7 @@ void performOTAUpdate(String firmwareURL, const char* description = "") {
   speedDoc["seconds"] = durationSec;
   speedDoc["speed_kbps"] = speedKBps;
   speedDoc["url"] = firmwareURL;
-  speedDoc["description"] = description;
+  if (description) speedDoc["description"] = description;
   publishJsonLog("ota", "⏱️ Download speed and time", speedDoc.as<JsonObject>());
 
   if (written != contentLength) {
@@ -175,17 +175,17 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
 
     const char* targetLocation = doc["node_location"];
-    const char* targetId = doc["node_id"];
+    int targetId = doc["node_id"];
     const char* url = doc["firmware_url"];
     const char* targetVersion = doc["firmware_version"];
     const char* description = doc["firmware_description"];
 
-    if (!targetLocation || !targetId || !url) {
+    if (!targetLocation || !url || !doc.containsKey("node_id")) {
       publishJsonLog("ota", "❌ Incomplete OTA payload");
       return;
     }
 
-    if (strcmp(targetLocation, NODE_LOCATION) == 0 && strcmp(targetId, NODE_ID) == 0) {
+    if (strcmp(targetLocation, NODE_LOCATION) == 0 && targetId == NODE_ID) {
       if (targetVersion && strcmp(targetVersion, CURRENT_VERSION) == 0) {
         publishJsonLog("ota", "ℹ️ Firmware already up to date");
         return;
