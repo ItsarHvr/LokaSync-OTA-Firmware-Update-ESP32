@@ -102,7 +102,8 @@ class ServiceFirmware:
         #Make node_name
         node_location = firmware_data.get("node_location", "Unknown")
         node_id = firmware_data.get("node_id", "0")
-        firmware_data["node_name"] = f"{node_location}-node{node_id}"
+        node_name = f"{node_location}-node{node_id}"
+        firmware_data["node_name"] = node_name
 
         #Input to MongoDB
         try:
@@ -113,7 +114,10 @@ class ServiceFirmware:
         #Publish ke MQTT
         try:
             topic = "LokaSync/CloudOTA/Firmware"
-            payload = json.dumps({"url": firmware_url})
+            payload = json.dumps({
+                "node_name":node_name,
+                "url": firmware_url
+                })
             publish.single(topic, payload, hostname=MQTT_ADDRESS)
         except Exception as e:
             raise Exception(f"Gagal Mengirim ke MQTT: {str(e)}")
