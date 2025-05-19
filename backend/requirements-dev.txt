@@ -1,0 +1,33 @@
+# FastAPI
+fastapi[standard]
+pydantic
+python-jose[cryptography]
+
+# Rate Limiter
+slowapi
+
+# ASGI
+uvicorn
+
+# Auth
+firebase-admin
+
+# Database
+motor
+pymongo
+
+# MQTT
+paho-mqtt
+
+# Testing
+requests
+pytest
+
+# Google Drive API
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+
+# Others
+python-dotenv
+colorlog

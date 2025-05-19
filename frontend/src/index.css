@@ -1,0 +1,199 @@
+@import "tailwindcss";
+
+/* Custom variables */
+:root {
+  --lokasync-light-green: #e6ffee;
+  --lokasync-border: #d1e0d1;
+  --lokasync-primary: #22c55e;
+  --lokasync-secondary: #16a34a;
+  --lokasync-accent: #15803d;
+}
+
+/* Global styles */
+body {
+  font-family: system-ui, Arial, sans-serif;
+}
+
+/* Navbar link animation */
+.nav-link {
+  position: relative;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -2px;
+  left: 0;
+  background-color: var(--lokasync-primary);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 100%;
+}
+
+/* Custom component classes */
+.lokasync-card {
+  background-color: #ffffff;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-radius: 0.5rem;
+  border: 2px solid var(--lokasync-border);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.lokasync-input {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--lokasync-border);
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.lokasync-input:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4);
+}
+
+.lokasync-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Lokasync custom colors */
+.bg-lokasync-light-green {
+  background-color: var(--lokasync-light-green);
+}
+
+.bg-lokasync-primary {
+  background-color: var(--lokasync-primary);
+}
+
+.bg-lokasync-secondary {
+  background-color: var(--lokasync-secondary);
+}
+
+.hover\:bg-lokasync-secondary:hover {
+  background-color: var(--lokasync-secondary);
+}
+
+.hover\:bg-lokasync-accent:hover {
+  background-color: var(--lokasync-accent);
+}
+
+.hover\:bg-lokasync-light-green:hover {
+  background-color: var(--lokasync-light-green);
+}
+
+.text-lokasync-accent {
+  color: var(--lokasync-accent);
+}
+
+.text-lokasync-primary {
+  color: var(--lokasync-primary);
+}
+
+.border-lokasync-primary {
+  border-color: var(--lokasync-primary);
+}
+
+.border-lokasync-border {
+  border-color: var(--lokasync-border);
+}
+
+.focus\:border-lokasync-primary:focus {
+  border-color: var(--lokasync-primary);
+}
+
+.focus\:ring-lokasync-primary:focus {
+  box-shadow: 0 0 0 2px var(--lokasync-primary);
+}
+
+/* Custom classes for auth forms */
+.auth-form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--lokasync-light-green);
+  padding: 1rem;
+  font-family: system-ui, Arial, sans-serif;
+}
+
+.auth-form {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 450px;
+  transition: all 0.2s ease-in-out;
+}
+
+.auth-form:hover {
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Set system font for all elements */
+body,
+input,
+button,
+textarea,
+select {
+  font-family: system-ui, Arial, sans-serif;
+}
+
+/* Utility classes for Tailwind v4 compatibility */
+.text-white {
+  color: #ffffff;
+}
+
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.text-gray-600 {
+  color: #4b5563;
+}
+
+.border-red-500 {
+  border-color: #ef4444;
+}
+
+.focus\:border-red-500:focus {
+  border-color: #ef4444;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
