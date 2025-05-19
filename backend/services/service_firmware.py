@@ -75,7 +75,7 @@ class ServiceFirmware:
             return HTTPException(status_code=500, detail=f"Gagal mengambil data firmware: {str(e)}")
         
     async def add_firmware(self, form: UploadFirmwareForm):
-        filename = form.firmwarefile.filename
+        filename = form.firmware_file.filename
         save_path = f"tmp/{filename}"
         
         if not os.path.exists("tmp"):
@@ -83,7 +83,7 @@ class ServiceFirmware:
             
         try:
             with open(save_path, "wb+") as f:
-                content = await form.firmwarefile.read()
+                content = await form.firmware_file.read()
                 f.write(content)
         except Exception as e:
             raise Exception(f"Gagal menyimpan file: {str(e)}")
@@ -93,7 +93,6 @@ class ServiceFirmware:
             firmware_url = upload_to_drive(save_path, filename, self.folder_id)
         except Exception as e:
             raise Exception(f"Gagal Upload ke GDrive: {str(e)}")
-        
         
         firmware_dto = form.to_dto(firmware_url)
         firmware_data = firmware_dto.model_dump()
@@ -124,7 +123,7 @@ class ServiceFirmware:
             raise Exception(f"Gagal Mengirim ke MQTT: {str(e)}")
         
     async def update_firmware(self, node_name: str, form: UpdateFirmwareForm):
-        filename = form.firmwarefile.filename
+        filename = form.firmware_file.filename
         save_path = f"tmp/{filename}"
         
         if not os.path.exists("tmp"):
@@ -132,13 +131,47 @@ class ServiceFirmware:
         
         try:
             with open(save_path, "wb+") as f:
-                content = await form.firmwarefile.read()
+                content = await form.firmware_file.read()
                 f.write(content)
         except Exception as e:
             raise Exception(f"Gagal menyimpan file: {str(e)}")
             
+        try:
+            firmware_url = upload_to_drive(save_path, filename, self.folder_id)
+        except Exception as e:
+            raise Exception(f"Gagal Upload ke GDrive: {str(e)}")
         
-        return True
+        existing_data = await firmware_collection.find_one({"node_name": node_name})
+        if not existing_data:
+            raise HTTPException(status_code=404, detail="Firmware not found")
+        
+        new_firmware_data = {
+            "node_id": existing_data["node_id"],
+            "node_location": existing_data["node_location"],
+            "sensor_type": existing_data["sensor_type"],
+            "node_name": node_name,
+            "firmware_description": getattr(form, "firmware_description", ""),
+            "firmware_version": form.firmware_version,
+            "firmware_url": firmware_url,
+            "latest_updated": datetime.now(timezone.utc),
+        }
+        
+        try:
+            await firmware_collection.insert_one(new_firmware_data)
+        except Exception as e:
+            raise Exception(f"Gagal input ke MongoDB: {str(e)}")
+        
+        try:
+            topic = "LokaSync/CloudOTA/Firmware"
+            payload = json.dumps({
+                "node_name": node_name,
+                "url": firmware_url
+            })
+            publish.single(topic, payload, hostname=MQTT_ADDRESS)
+        except Exception as e:
+            raise Exception(f"Gagal Mengirim ke MQTT: {str(e)}")
+        
+        return {"message": "Update firmware successfully."}
 
     async def delete_firmware(self, node_id: str):
         # Dummy atau implementasi logika delete

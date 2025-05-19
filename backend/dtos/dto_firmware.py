@@ -56,15 +56,18 @@ class UpdateFirmwareForm:
     def __init__(
         self,
         firmware_version: str = Form(...),
-        firmware_file : UploadFile = File(...)
+        firmware_file : UploadFile = File(...),
+        firmware_description : Optional[str] = Form(None),
     ):
         self.firmware_version = firmware_version
         self.firmware_file = firmware_file
+        self.firmware_description = firmware_description
         
     def to_dto(self, firmware_url: str) -> InputFirmware:
         return InputFirmware(
             firmware_version=self.firmware_version,
-            firmware_url=firmware_url
+            firmware_url=firmware_url,
+            firmware_description=self.firmware_description,
         )
 
 class FilterOptions(TypedDict):
