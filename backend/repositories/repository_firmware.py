@@ -42,7 +42,8 @@ class FirmwareRepository:
                 latest_updated=doc["latest_updated"],
                 node_id=doc["node_id"],
                 node_location=doc["node_location"],
-                node_name=doc["node_name"]
+                node_name=doc["node_name"],
+                sensor_type=doc["sensor_type"]
             )
             for doc in docs
         ]

@@ -11,3 +11,4 @@ class Firmware(BaseModel):
     node_id: int
     node_location: str
     node_name: str
+    sensor_type: str

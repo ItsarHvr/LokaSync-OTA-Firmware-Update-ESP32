@@ -102,7 +102,8 @@ class ServiceFirmware:
         #Make node_name
         node_location = firmware_data.get("node_location", "Unknown")
         node_id = firmware_data.get("node_id", "0")
-        node_name = f"{node_location}-node{node_id}"
+        sensor_type = firmware_data.get("sensor_type", "Unknown")
+        node_name = f"{node_location}-node{node_id}-{sensor_type}".lower()
         firmware_data["node_name"] = node_name
 
         #Input to MongoDB

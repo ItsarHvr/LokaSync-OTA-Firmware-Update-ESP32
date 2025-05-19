@@ -12,6 +12,7 @@ class InputFirmware(BaseModel):
     firmware_url: str = Field(min_length=1, pattern=r'^(http|https)://.*$') # URL FORMAT
     node_id: int = Field(min=1)
     node_location: str = Field(min_length=1, max_length=255)
+    sensor_type: str = Field(min_length=1, max_length=255)
 
     class Config:
         json_schema_extra ={
@@ -30,7 +31,8 @@ class UploadFirmwareForm:
         firmware_version: str = Form(...),
         node_location : str = Form(...),
         node_id: int = Form(...),
-        firmware_description : Optional[str] = Form(None),
+        firmware_description : str = Form(...),
+        sensor_type : str = Form(...),
         firmwarefile : UploadFile = File(...)
     ):
         self.firmware_version = firmware_version
@@ -38,6 +40,7 @@ class UploadFirmwareForm:
         self.node_location = node_location
         self.firmware_description = firmware_description
         self.firmwarefile = firmwarefile
+        self.sensor_type = sensor_type
         
     def to_dto(self, firmware_url: str) -> InputFirmware:
         return InputFirmware(
@@ -45,7 +48,8 @@ class UploadFirmwareForm:
             firmware_version=self.firmware_version,
             firmware_url=firmware_url,
             node_id=self.node_id,
-            node_location=self.node_location
+            node_location=self.node_location,
+            sensor_type=self.sensor_type
         )
 
 class FilterOptions(TypedDict):
