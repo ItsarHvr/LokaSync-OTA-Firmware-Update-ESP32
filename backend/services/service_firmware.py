@@ -81,7 +81,7 @@ class ServiceFirmware:
             self,
             node_name: str,
             page: int = 1,
-            per_page: int = 5
+            per_page: int = 10
     ) -> OuputFirmwareByNodeName:
         try:
             list_firmware = await self.firmware_repository.get_by_node_name(
@@ -136,7 +136,7 @@ class ServiceFirmware:
 
         #Input to MongoDB
         try:
-            await firmware_collection.insert_one(firmware_data)
+            await self.firmware_repository.add_firmware(firmware_data)
         except Exception as e:
             raise Exception(f"Gagal input ke MongoDB: {str(e)}")
         
@@ -170,23 +170,14 @@ class ServiceFirmware:
         except Exception as e:
             raise Exception(f"Gagal Upload ke GDrive: {str(e)}")
         
-        existing_data = await firmware_collection.find_one({"node_name": node_name})
-        if not existing_data:
-            raise HTTPException(status_code=404, detail="Firmware not found")
-        
-        new_firmware_data = {
-            "node_id": existing_data["node_id"],
-            "node_location": existing_data["node_location"],
-            "sensor_type": existing_data["sensor_type"],
-            "node_name": node_name,
-            "firmware_description": getattr(form, "firmware_description", ""),
-            "firmware_version": form.firmware_version,
-            "firmware_url": firmware_url,
-            "latest_updated": datetime.now(timezone.utc),
-        }
-        
         try:
-            await firmware_collection.insert_one(new_firmware_data)
+            new_data = await self.firmware_repository.update_firmware(node_name,{
+                "firmware_description": getattr(form, "firmware_description", ""),
+                "firmware_version": form.firmware_version,
+                "firmware_url": firmware_url,
+            })
+            if not new_data:
+                raise HTTPException(status_code=404, detail="Firmware not found")
         except Exception as e:
             raise Exception(f"Gagal input ke MongoDB: {str(e)}")
         
@@ -202,6 +193,12 @@ class ServiceFirmware:
         
         return {"message": "Update firmware successfully."}
 
-    async def delete_firmware(self, node_id: str):
-        # Dummy atau implementasi logika delete
-        return True
+    async def delete_by_firmware_version(
+            self, 
+            node_name: str,
+            firmware_version
+    ):
+        await self.firmware_repository.delete_by_firmware_verison(node_name, firmware_version)
+
+    async def delete_all_by_node_name(self, node_name: str):
+        await self.firmware_repository.delete_all_by_node_name(node_name)

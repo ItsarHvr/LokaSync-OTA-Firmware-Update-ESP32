@@ -29,6 +29,24 @@ async def get_list_firmware(
     )
     return response_get
 
+@router_firmware.get(
+    "/firmware/get_by_node_name/{node_name}",
+    response_model=OuputFirmwareByNodeName,
+    summary="Get list firmware by node_name."
+)
+async def get_by_node_name(
+    node_name: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    service_firmware: ServiceFirmware = Depends()
+):
+    response_get = await service_firmware.get_by_node_name(
+        node_name,
+        page=page,
+        per_page=per_page,
+    )
+    return response_get 
+
 @router_firmware.post("/firmware/add")
 async def add_firmware(
     form: UploadFirmwareForm = Depends(),
@@ -51,24 +69,22 @@ async def update_firmware(
         return JSONResponse(status_code=200, content={"message": "Update firmware successfully."})
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
-    
-@router_firmware.get("/firmware/get_by_node_name/",
-    response_model=OuputFirmwareByNodeName,
-    summary="Get list firmware by node_name."
-)
-async def get_by_node_name(
-    node_name: Optional[str] = Query(...),
-    page: int = Query(1, ge=1),
-    per_page: int = Query(5, ge=1, le=100),
+
+@router_firmware.delete("/firmware/delete/")
+async def delete_firmware(
+    node_name: str = Query(...),
+    firmware_version: Optional[str] = Query(None),
     service_firmware: ServiceFirmware = Depends()
 ):
-    response_get = await service_firmware.get_by_node_name(
-        node_name,
-        page=page,
-        per_page=per_page,
-    )
-    return response_get 
+    try:
+        if firmware_version:
+            await service_firmware.delete_by_firmware_version(node_name, firmware_version)
+            msg = f"Deleted firmware '{firmware_version}' from node '{node_name}'"
+        else:
+            await service_firmware.delete_all_by_node_name(node_name)
+            msg = f"Deleted all firmwares from node '{node_name}'"
 
-@router_firmware.delete("/firmware/delete/{node_id}")
-async def delete_firmware(node_id: str, firmware: InputFirmware):
-    return JSONResponse(status_code=200, content={"message": "Delete firmware successfully."})
+        return JSONResponse(status_code=200, content={"message": msg})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+        

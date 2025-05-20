@@ -3,6 +3,7 @@ from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorCollection
 from models.model_firmware import Firmware
 from dtos.dto_firmware import FilterOptions
+from datetime import datetime, timezone
 
 class FirmwareRepository:
     def __init__(self, collection: AsyncIOMotorCollection):
@@ -113,7 +114,7 @@ class FirmwareRepository:
             self,
             node_name: str,
             page: int = 1,
-            per_page: int = 5
+            per_page: int = 10
     ) -> List[Firmware]:
         pipeline = [
             # Stage 1: Match documents based on query filters
@@ -150,3 +151,47 @@ class FirmwareRepository:
             node_name: str
     ) -> int:
         return await self.collection.count_documents({"node_name":node_name})
+    
+    async def add_firmware(self, firmware_data: dict):
+        firmware_data["latest_updated"] = datetime.now(timezone.utc)
+        await self.collection.insert_one(firmware_data)
+    
+    async def update_firmware(
+            self, 
+            node_name: str,
+            firmware_data: dict
+    ):
+        existing_data = await self.collection.find_one({"node_name": node_name})
+        if not existing_data:
+            return None
+        
+        new_firmware = {
+            "node_id": existing_data["node_id"],
+            "node_location": existing_data["node_location"],
+            "sensor_type": existing_data["sensor_type"],
+            "node_name": node_name,
+            "firmware_description": firmware_data.get("firmware_description", ""),
+            "firmware_version": firmware_data["firmware_version"],
+            "firmware_url": firmware_data["firmware_url"],
+            "latest_updated": datetime.now(timezone.utc),
+        }
+        await self.collection.insert_one(new_firmware)
+        return new_firmware
+    
+    async def delete_by_firmware_verison(
+            self,
+            node_name: str,
+            firmware_version: str
+    ):
+        await self.collection.delete_one({
+            "node_name": node_name,
+            "firmware_version": firmware_version
+        })
+
+    async def delete_all_by_node_name(
+            self,
+            node_name: str
+    ):
+        await self.collection.delete_many({
+            "node_name": node_name
+        })
