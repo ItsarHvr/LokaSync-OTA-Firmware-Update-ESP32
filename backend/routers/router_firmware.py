@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from typing import Optional
 
-from dtos.dto_firmware import InputFirmware, UploadFirmwareForm, UpdateFirmwareForm, OutputFirmwarePagination
+from dtos.dto_firmware import InputFirmware, UploadFirmwareForm, UpdateFirmwareForm, OutputFirmwarePagination, OuputFirmwareByNodeName
 from services.service_firmware import ServiceFirmware
 
 router_firmware = APIRouter(prefix="/api/v1", tags=["Firmware"])
@@ -52,9 +52,22 @@ async def update_firmware(
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
     
-@router_firmware.get("/firmware/get_by_node_name/{node_name}")
-
-    
+@router_firmware.get("/firmware/get_by_node_name/",
+    response_model=OuputFirmwareByNodeName,
+    summary="Get list firmware by node_name."
+)
+async def get_by_node_name(
+    node_name: Optional[str] = Query(...),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(5, ge=1, le=100),
+    service_firmware: ServiceFirmware = Depends()
+):
+    response_get = await service_firmware.get_by_node_name(
+        node_name,
+        page=page,
+        per_page=per_page,
+    )
+    return response_get 
 
 @router_firmware.delete("/firmware/delete/{node_id}")
 async def delete_firmware(node_id: str, firmware: InputFirmware):

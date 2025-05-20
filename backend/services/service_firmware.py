@@ -12,7 +12,7 @@ from bson import ObjectId
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from cores.service_drive import upload_to_drive
-from dtos.dto_firmware import UploadFirmwareForm, UpdateFirmwareForm, OutputFirmwarePagination
+from dtos.dto_firmware import UploadFirmwareForm, UpdateFirmwareForm, OutputFirmwarePagination, OuputFirmwareByNodeName
 from repositories.repository_firmware import FirmwareRepository
 
 load_dotenv()
@@ -76,7 +76,33 @@ class ServiceFirmware:
             )
         except Exception as e:
             return HTTPException(status_code=500, detail=f"Gagal mengambil data firmware: {str(e)}")
-        
+
+    async def get_by_node_name(
+            self,
+            node_name: str,
+            page: int = 1,
+            per_page: int = 5
+    ) -> OuputFirmwareByNodeName:
+        try:
+            list_firmware = await self.firmware_repository.get_by_node_name(
+                node_name=node_name,
+                page=page,
+                per_page=per_page
+            )
+
+            total_data = await self.firmware_repository.count_by_node_name(node_name)
+            total_page = ceil(total_data / per_page) if total_data else 1
+
+            return OuputFirmwareByNodeName(
+                page=page,
+                per_page=per_page,
+                total_data=total_data,
+                total_page=total_page,
+                firmware_data=list_firmware
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Gagal mengambil data firmware berdasarkan node_name: {str(e)}")
+
     async def add_firmware(self, form: UploadFirmwareForm):
         filename = form.firmware_file.filename
         save_path = f"tmp/{filename}"

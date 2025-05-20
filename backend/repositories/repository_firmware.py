@@ -108,3 +108,45 @@ class FirmwareRepository:
             "node_location": node_locations, # List[str]
             "sensor_type": sensor_type # List[str]
         }
+    
+    async def get_by_node_name(
+            self,
+            node_name: str,
+            page: int = 1,
+            per_page: int = 5
+    ) -> List[Firmware]:
+        pipeline = [
+            # Stage 1: Match documents based on query filters
+            {"$match": {"node_name": node_name}},
+            # Stage 2: Sort by latest_updated
+            {"$sort": {"latest_updated": -1}},
+            # Stage 3: Skip for pagination
+            {"$skip": (page - 1) * per_page},
+            # Stage 4: Limit results per page
+            {"$limit": per_page}
+        ]
+
+        cursor = self.collection.aggregate(pipeline)
+        docs = await cursor.to_list(length=per_page)
+
+        # Convert MongoDB documents to Firmware model objects
+        return [
+            Firmware(
+                _id=str(doc["_id"]),
+                firmware_description=doc.get("firmware_description", ""),
+                firmware_version=doc["firmware_version"],
+                firmware_url=doc["firmware_url"],
+                latest_updated=doc["latest_updated"],
+                node_id=doc["node_id"],
+                node_location=doc["node_location"],
+                node_name=doc["node_name"],
+                sensor_type=doc["sensor_type"]
+            )
+            for doc in docs
+        ]
+    
+    async def count_by_node_name(
+            self,
+            node_name: str
+    ) -> int:
+        return await self.collection.count_documents({"node_name":node_name})
