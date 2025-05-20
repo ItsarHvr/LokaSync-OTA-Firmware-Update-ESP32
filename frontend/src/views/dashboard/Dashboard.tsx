@@ -343,7 +343,7 @@ const Dashboard = () => {
                     </td>
                     <td className="border-b border-lokasync-border px-4 py-3">
                       <div className="flex justify-center space-x-2">
-                        {/* Publish button */}
+                        {/* Upload firmware icon */}
                         <button
                           onClick={() => handlePublishUpdate(firmware)}
                           className="text-lokasync-primary hover:text-lokasync-secondary p-1"
@@ -363,7 +363,7 @@ const Dashboard = () => {
                           </svg>
                         </button>
 
-                        {/* View button */}
+                        {/* Download Url */}
                         <a
                           href={firmware.firmwareUrl}
                           target="_blank"

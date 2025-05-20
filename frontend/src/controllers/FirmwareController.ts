@@ -223,33 +223,28 @@ export const FirmwareController = {
   // Publish firmware update via MQTT
   async publishFirmwareUpdate(firmware: Firmware): Promise<ApiResponse> {
     try {
-      const token = await this.generateMQTTToken();
-
-      const payload = {
-        node_id: firmware.nodeId,
-        node_name: firmware.nodeName,
-        node_location: firmware.nodeLocation,
-        sensor_type: firmware.sensorType,
+      // Create the payload in snake_case format for the ESP devices
+      const mqttPayload = {
         firmware_version: firmware.firmwareVersion,
-        firmware_description: firmware.firmwareDescription,
         firmware_url: firmware.firmwareUrl,
-        _token: token,
+        node_id: firmware.nodeId,
+        node_location: firmware.nodeLocation,
+        node_name: firmware.nodeName,
+        sensor_type: firmware.sensorType
       };
 
-      // First, try the API endpoint
-      const result = await fetchWithAuth<ApiResponse>("/firmware/publish", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      // Define MQTT topic for this specific node (you can adjust this as needed)
+      const pubTopic = `LokaSync/CloudOTA/Firmware`;
+      
+      // Directly publish to MQTT broker
+      console.log(`Publishing firmware update to ${pubTopic}:`, mqttPayload);
+      mqttController.publish(pubTopic, mqttPayload);
 
-      // If we have a real MQTT connection, also publish directly
-      mqttController.publishUpdate(
-        firmware.nodeId,
-        firmware.firmwareUrl,
-        firmware.firmwareVersion,
-      );
-
-      return result;
+      // Return a success response without calling the backend API
+      return {
+        message: `Firmware update published to ${firmware.nodeName}`,
+        statusCode: 200
+      };
     } catch (error) {
       console.error("Error publishing firmware update:", error);
       throw error;
