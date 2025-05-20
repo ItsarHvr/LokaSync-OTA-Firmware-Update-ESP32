@@ -52,6 +52,9 @@ async def update_firmware(
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
     
+@router_firmware.get("/firmware/get_by_node_name/{node_name}")
+
+    
 
 @router_firmware.delete("/firmware/delete/{node_id}")
 async def delete_firmware(node_id: str, firmware: InputFirmware):

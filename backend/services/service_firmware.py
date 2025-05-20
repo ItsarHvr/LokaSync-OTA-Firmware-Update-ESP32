@@ -11,7 +11,7 @@ from math import ceil
 from bson import ObjectId
 
 from motor.motor_asyncio import AsyncIOMotorClient
-from services.service_drive import upload_to_drive
+from cores.service_drive import upload_to_drive
 from dtos.dto_firmware import UploadFirmwareForm, UpdateFirmwareForm, OutputFirmwarePagination
 from repositories.repository_firmware import FirmwareRepository
 

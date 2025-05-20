@@ -6,7 +6,7 @@ from firebase_admin import credentials
 
 from routers.router_firmware import router_firmware
 from routers.router_log import router_log
-from services.service_mqtt import start_mqtt
+from mqtts.service_mqtt import start_mqtt
 
 app = FastAPI(
     title="LokaSync API",

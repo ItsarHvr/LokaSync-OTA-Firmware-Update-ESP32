@@ -3,17 +3,10 @@ import paho.mqtt.client as mqtt
 import threading
 import asyncio
 import os
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import HTTPException
-from firebase_admin import firestore
-from typing import Optional
-from datetime import datetime
-from math import ceil
 from dotenv import load_dotenv
 
-
 from dtos.dto_log import InputLog
-from repositories.repository_mqtt_log import MQTTLogRepository
+from repositories.repository_log import LogRepository
 
 load_dotenv()
 
@@ -52,7 +45,7 @@ def on_message(client, userdata, msg):
         print("MQTT Data Error", e)
 
 async def add_log(payload: dict):
-    repository_mqtt_log = MQTTLogRepository()
+    repository_mqtt_log = LogRepository()
     required_keys = ["node_name", "node_location", "node_status", "first_version", "latest_version"]
     if all(k in payload for k in required_keys):
         node_status = True if payload["node_status"] == "active" else False
@@ -69,8 +62,6 @@ async def add_log(payload: dict):
 
 
 def start_mqtt():
-    db = firestore.client()
-
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
