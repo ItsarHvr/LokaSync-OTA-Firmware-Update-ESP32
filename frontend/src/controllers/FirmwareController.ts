@@ -1,6 +1,5 @@
-// filepath: d:\Kuliah\Semester6\09_Proyek-Kekhususan\lokasync-web\frontend\src\controllers\FirmwareController.ts.new
 import { fetchWithAuth, createQueryParams } from "../utils/api";
-import type { Firmware, FirmwareResponse, FirmwarePayload } from "../types";
+import type { Firmware, FirmwareResponse } from "../types";
 import { auth } from "../firebase";
 import { mqttController } from "./MQTTController";
 
@@ -9,6 +8,49 @@ type ApiResponse = {
   message: string;
   statusCode: number;
 };
+
+// Define types for backend responses
+interface BackendFirmwareResponse {
+  message: string;
+  status_code?: number;
+  statusCode?: number;
+  page: number;
+  per_page?: number;
+  size?: number;
+  total_data?: number;
+  totalData?: number;
+  total_page?: number;
+  totalPage?: number;
+  filter_options?: {
+    node_id?: number[];
+    node_location?: string[];
+    sensor_type?: string[];
+  };
+  filterOptions?: {
+    nodeId?: number[];
+    nodeLocation?: string[];
+    sensorType?: string[];
+  };
+  firmware_data?: BackendFirmwareItem[];
+  firmwareData?: BackendFirmwareItem[];
+}
+
+interface BackendFirmwareItem {
+  firmware_description?: string;
+  firmwareDescription?: string;
+  firmware_version?: string;
+  firmwareVersion?: string;
+  firmware_url?: string;
+  firmwareUrl?: string;
+  node_id?: number;
+  nodeId?: number;
+  node_location?: string;
+  nodeLocation?: string;
+  node_name?: string;
+  nodeName?: string;
+  sensor_type?: string;
+  sensorType?: string;
+}
 
 // FirmwareController for handling firmware-related API calls
 export const FirmwareController = {
@@ -25,42 +67,44 @@ export const FirmwareController = {
     try {
       const queryParams = createQueryParams({
         page,
-        size,
-        ...filters,
+        per_page: size,  // Match backend parameter name
+        node_id: filters.nodeId,  // Match backend parameter name
+        node_location: filters.nodeLocation,  // Match backend parameter name
+        sensor_type: filters.sensorType,  // Match backend parameter name
       });
 
-      return await fetchWithAuth<FirmwareResponse>(`/firmware${queryParams}`);
-    } catch (err) {
-      // If the API call fails, we can return dummy data during development
-      console.warn(`Error fetching firmware data: ${err}`);
-
-      // Create dummy data for testing
-      const dummyData: Firmware[] = Array.from({ length: 10 }, (_, i) => ({
-        firmwareDescription: `Firmware description ${i + 1}`,
-        firmwareVersion: `1.0.${i}`,
-        firmwareUrl: `https://drive.google.com/example-${i}.bin`,
-        nodeId: (i % 5) + 1,
-        nodeLocation: i % 2 === 0 ? "Depok Greenhouse" : "Jakarta Greenhouse",
-        nodeName: `${i % 2 === 0 ? "depok" : "jakarta"}-node${(i % 5) + 1}-${i % 3 === 0 ? "DHT11" : i % 3 === 1 ? "TDS" : "DS"}`,
-        sensorType: i % 3 === 0 ? "DHT11" : i % 3 === 1 ? "TDS" : "DS",
-      }));
-
-      const dummyResponse: FirmwareResponse = {
-        message: "Success",
-        statusCode: 200,
-        page,
-        size,
-        totalData: 20,
-        totalPage: 2,
+      const response = await fetchWithAuth<BackendFirmwareResponse>(`/firmware${queryParams}`, {
+        method: "GET"  // Explicitly set method to GET
+      });
+      
+      // Transform snake_case to camelCase for frontend consumption
+      const transformedResponse: FirmwareResponse = {
+        message: response.message,
+        statusCode: response.status_code || response.statusCode || 200,
+        page: response.page,
+        size: response.per_page || response.size || size,
+        totalData: response.total_data || response.totalData || 0,
+        totalPage: response.total_page || response.totalPage || 1,
         filterOptions: {
-          nodeId: [1, 2, 3, 4, 5],
-          nodeLocation: ["Depok Greenhouse", "Jakarta Greenhouse"],
-          sensorType: ["DHT11", "TDS", "DS"],
+          nodeId: response.filter_options?.node_id || response.filterOptions?.nodeId || [],
+          nodeLocation: response.filter_options?.node_location || response.filterOptions?.nodeLocation || [],
+          sensorType: response.filter_options?.sensor_type || response.filterOptions?.sensorType || [],
         },
-        firmwareData: dummyData,
+        firmwareData: (response.firmware_data || response.firmwareData || []).map((item) => ({
+          firmwareDescription: item.firmware_description || item.firmwareDescription || '',
+          firmwareVersion: item.firmware_version || item.firmwareVersion || '',
+          firmwareUrl: item.firmware_url || item.firmwareUrl || '',
+          nodeId: item.node_id || item.nodeId || 0,
+          nodeLocation: item.node_location || item.nodeLocation || '',
+          nodeName: item.node_name || item.nodeName || '',
+          sensorType: item.sensor_type || item.sensorType || '',
+        })),
       };
-
-      return dummyResponse;
+      
+      return transformedResponse;
+    } catch (err) {
+      console.error(`Error fetching firmware data: ${err}`);
+      throw err;
     }
   },
 
@@ -73,27 +117,38 @@ export const FirmwareController = {
       // If file is provided, use FormData
       const formData = new FormData();
       formData.append("file", file);
-      Object.entries(firmware).forEach(([key, value]) => {
-        formData.append(key, String(value));
-      });
-
-      return fetchWithAuth<ApiResponse>("/firmware", {
+      
+      // Convert camelCase to snake_case for backend
+      formData.append("node_id", String(firmware.nodeId));
+      formData.append("node_location", firmware.nodeLocation);
+      formData.append("sensor_type", firmware.sensorType);
+      formData.append("firmware_version", firmware.firmwareVersion);
+      formData.append("firmware_description", firmware.firmwareDescription);
+      
+      return fetchWithAuth<ApiResponse>("/firmware/add", {
         method: "POST",
         body: formData,
-        // Don't set Content-Type header for FormData, but keep the CSRF token header
       });
     } else {
-      // If no file, use JSON
-      return fetchWithAuth<ApiResponse>("/firmware", {
+      // If no file, use JSON with snake_case properties
+      const snakeCaseFirmware = {
+        node_id: firmware.nodeId,
+        node_location: firmware.nodeLocation,
+        sensor_type: firmware.sensorType,
+        firmware_version: firmware.firmwareVersion,
+        firmware_description: firmware.firmwareDescription,
+        firmware_url: firmware.firmwareUrl,
+      };
+      
+      return fetchWithAuth<ApiResponse>("/firmware/add", {
         method: "POST",
-        body: JSON.stringify(firmware),
+        body: JSON.stringify(snakeCaseFirmware),
       });
     }
   },
 
   // Update firmware
   async updateFirmware(
-    nodeName: string,
     firmware: Partial<Firmware>,
     file?: File,
   ): Promise<ApiResponse> {
@@ -101,49 +156,83 @@ export const FirmwareController = {
       // If file is provided, use FormData
       const formData = new FormData();
       formData.append("file", file);
-      Object.entries(firmware).forEach(([key, value]) => {
-        if (value !== undefined) {
-          formData.append(key, String(value));
-        }
-      });
+      
+      // Convert camelCase to snake_case for backend
+      if (firmware.nodeId !== undefined) formData.append("node_id", String(firmware.nodeId));
+      if (firmware.nodeLocation !== undefined) formData.append("node_location", firmware.nodeLocation);
+      if (firmware.sensorType !== undefined) formData.append("sensor_type", firmware.sensorType);
+      if (firmware.firmwareVersion !== undefined) formData.append("firmware_version", firmware.firmwareVersion);
+      if (firmware.firmwareDescription !== undefined) formData.append("firmware_description", firmware.firmwareDescription);
+      if (firmware.nodeName !== undefined) formData.append("node_name", firmware.nodeName);
 
-      return fetchWithAuth<ApiResponse>(`/firmware/${nodeName}`, {
+      return fetchWithAuth<ApiResponse>(`/firmware/update`, {
         method: "PUT",
         body: formData,
-        // Don't set Content-Type header for FormData, but keep the CSRF token header
       });
     } else {
-      // If no file, use JSON
-      return fetchWithAuth<ApiResponse>(`/firmware/${nodeName}`, {
+      // If no file, use JSON with snake_case properties
+      const snakeCaseFirmware: Record<string, unknown> = {};
+      
+      if (firmware.nodeId !== undefined) snakeCaseFirmware.node_id = firmware.nodeId;
+      if (firmware.nodeLocation !== undefined) snakeCaseFirmware.node_location = firmware.nodeLocation;
+      if (firmware.sensorType !== undefined) snakeCaseFirmware.sensor_type = firmware.sensorType;
+      if (firmware.firmwareVersion !== undefined) snakeCaseFirmware.firmware_version = firmware.firmwareVersion;
+      if (firmware.firmwareDescription !== undefined) snakeCaseFirmware.firmware_description = firmware.firmwareDescription;
+      if (firmware.firmwareUrl !== undefined) snakeCaseFirmware.firmware_url = firmware.firmwareUrl;
+      if (firmware.nodeName !== undefined) snakeCaseFirmware.node_name = firmware.nodeName;
+      
+      return fetchWithAuth<ApiResponse>(`/firmware/update`, {
         method: "PUT",
-        body: JSON.stringify(firmware),
+        body: JSON.stringify(snakeCaseFirmware),
       });
     }
   },
 
   // Delete firmware
-  async deleteFirmware(nodeName: string): Promise<ApiResponse> {
-    return fetchWithAuth<ApiResponse>(`/firmware/${nodeName}`, {
+  async deleteFirmware(nodeId: string): Promise<ApiResponse> {
+    return fetchWithAuth<ApiResponse>(`/firmware/delete/${nodeId}`, {
       method: "DELETE",
     });
   },
 
-  // Get firmware by nodeName
-  async getFirmwareByNodeName(nodeName: string): Promise<Firmware> {
-    return fetchWithAuth<Firmware>(`/firmware/${nodeName}`);
-  }, // Generate JWT token for MQTT payload
+  // Get firmware by nodeId
+  async getFirmwareByNodeId(nodeId: string): Promise<Firmware> {
+    const response = await fetchWithAuth<BackendFirmwareItem>(`/firmware/${nodeId}`, {
+      method: "GET"
+    });
+    
+    // Transform snake_case to camelCase
+    return {
+      firmwareDescription: response.firmware_description || response.firmwareDescription || '',
+      firmwareVersion: response.firmware_version || response.firmwareVersion || '',
+      firmwareUrl: response.firmware_url || response.firmwareUrl || '',
+      nodeId: response.node_id || response.nodeId || 0,
+      nodeLocation: response.node_location || response.nodeLocation || '',
+      nodeName: response.node_name || response.nodeName || '',
+      sensorType: response.sensor_type || response.sensorType || '',
+    };
+  },
+
+  // Generate JWT token for MQTT payload
   async generateMQTTToken(): Promise<string> {
     // This would call your backend to generate a token
     const token = await auth.currentUser?.getIdToken();
     return token || "";
   },
+  
   // Publish firmware update via MQTT
   async publishFirmwareUpdate(firmware: Firmware): Promise<ApiResponse> {
     try {
       const token = await this.generateMQTTToken();
 
-      const payload: FirmwarePayload = {
-        ...firmware,
+      const payload = {
+        node_id: firmware.nodeId,
+        node_name: firmware.nodeName,
+        node_location: firmware.nodeLocation,
+        sensor_type: firmware.sensorType,
+        firmware_version: firmware.firmwareVersion,
+        firmware_description: firmware.firmwareDescription,
+        firmware_url: firmware.firmwareUrl,
         _token: token,
       };
 
@@ -154,7 +243,6 @@ export const FirmwareController = {
       });
 
       // If we have a real MQTT connection, also publish directly
-      // This can be removed in production if the API handles MQTT
       mqttController.publishUpdate(
         firmware.nodeId,
         firmware.firmwareUrl,

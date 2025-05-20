@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 import firebase_admin
 from firebase_admin import credentials
@@ -15,6 +16,18 @@ app = FastAPI(
     docs_url="/api/v1/docs",
     redoc_url="/api/v1/redoc",
     openapi_url="/api/v1/openapi.json",
+)
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost",     # Production
+        "http://localhost:3000" # Development
+    ],  # Allow all development ports
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods including OPTIONS
+    allow_headers=["*"],  # Allow all headers
 )
 
 # Initialize firebase admin SDK

@@ -50,7 +50,7 @@ const EditFirmware = () => {
         setIsFetching(true);
         setError(""); // This would be the actual API call in production
         // When implementing properly, use the actual API call
-        // const firmware = await FirmwareController.getFirmwareByNodeName(nodeName);
+        // const firmware = await FirmwareController.getFirmwareByNodeId(nodeName);
 
         // For now, let's create dummy data
         const dummyFirmware: Firmware = {
@@ -161,11 +161,10 @@ const EditFirmware = () => {
 
       // For now just simulate success (uncomment the actual call in production)
       await FirmwareController.updateFirmware(
-        nodeName,
         formData,
         firmwareFile || undefined,
       );
-      console.log("Updating firmware:", nodeName, formData, firmwareFile);
+      console.log("Updating firmware:", formData, firmwareFile);
 
       // Navigate back to dashboard on success
       navigate("/dashboard", {

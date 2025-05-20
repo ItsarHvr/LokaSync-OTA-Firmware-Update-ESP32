@@ -3,7 +3,7 @@ import { auth } from "../firebase";
 import { getCSRFToken, refreshCSRFToken } from "./csrf";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
 // Helper function to get the current user's ID token
 export const getIdToken = async (): Promise<string | null> => {
@@ -28,8 +28,11 @@ export const fetchWithAuth = async <T>(
   const token = await getIdToken();
   const csrfToken = getCSRFToken();
 
+  // Set default method to GET if not provided
+  const method = options.method || "GET";
+  
   // Only include CSRF token for non-GET requests
-  const isModifyingRequest = options.method && options.method !== "GET";
+  const isModifyingRequest = method !== "GET";
 
   // Check if the request body is FormData
   const isFormData = options.body instanceof FormData;
@@ -45,7 +48,9 @@ export const fetchWithAuth = async <T>(
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
+      method, // Use the explicitly set method
       headers,
+      credentials: "include", // Include credentials for cross-origin requests
     });
 
     if (!response.ok) {

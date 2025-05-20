@@ -59,35 +59,35 @@ const Dashboard = () => {
         },
       );
 
-      setFirmwares(response.firmwareData);
-      setTotalPages(response.totalPage);
-      setTotalData(response.totalData);
-      setFilterOptions(response.filterOptions);
+      if (response && response.firmwareData) {
+        setFirmwares(response.firmwareData);
+        setTotalPages(response.totalPage || 1);
+        setTotalData(response.totalData || 0);
+        
+        // Only update filter options if they exist
+        if (response.filterOptions) {
+          setFilterOptions({
+            nodeId: response.filterOptions.nodeId || [],
+            nodeLocation: response.filterOptions.nodeLocation || [],
+            sensorType: response.filterOptions.sensorType || [],
+          });
+        }
+      } else {
+        setFirmwares(response.firmwareData);
+        setTotalPages(response.totalPage);
+        setTotalData(response.totalData);
+        setFilterOptions(response.filterOptions);
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
         setError("Failed to fetch firmware data");
       }
-      // Create dummy data for testing (remove in production)
-      const dummyData = Array.from({ length: 10 }, (_, i) => ({
-        firmwareDescription: `Firmware description ${i + 1}`,
-        firmwareVersion: `1.0.${i}`,
-        firmwareUrl: `https://drive.google.com/example-${i}.bin`,
-        nodeId: (i % 5) + 1,
-        nodeLocation: i % 2 === 0 ? "Depok Greenhouse" : "Jakarta Greenhouse",
-        nodeName: `${i % 2 === 0 ? "depok" : "jakarta"}-node${(i % 5) + 1}-${i % 3 === 0 ? "DHT11" : i % 3 === 1 ? "TDS" : "DS"}`,
-        sensorType: i % 3 === 0 ? "DHT11" : i % 3 === 1 ? "TDS" : "DS",
-      }));
 
-      setFirmwares(dummyData);
-      setTotalPages(2);
-      setTotalData(20);
-      setFilterOptions({
-        nodeId: [1, 2, 3, 4, 5],
-        nodeLocation: ["Depok Greenhouse", "Jakarta Greenhouse"],
-        sensorType: ["DHT11", "TDS", "DS"],
-      });
+      setFirmwares([]);
+      setTotalPages(0);
+      setTotalData(0);
     } finally {
       setIsLoading(false);
     }
@@ -314,7 +314,7 @@ const Dashboard = () => {
                     </div>
                   </td>
                 </tr>
-              ) : firmwares.length === 0 ? (
+              ) : !firmwares.length || firmwares.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-4 text-gray-500">
                     No firmware data found
@@ -323,7 +323,7 @@ const Dashboard = () => {
               ) : (
                 firmwares.map((firmware, index) => (
                   <tr
-                    key={firmware.nodeName}
+                    key={firmware.nodeName || `firmware-${index}`}
                     className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                   >
                     <td className="border-b border-lokasync-border px-4 py-3">
