@@ -38,8 +38,9 @@ class ServiceFirmware:
         self,
         node_id: Optional[int] = None,
         node_location: Optional[str] = None,
+        sensor_type: Optional[str] = None,
         page: int = 1,
-        per_page: int = 5
+        per_page: int = 10
     ) -> OutputFirmwarePagination:
         try:
             # 1. Data firmware
@@ -47,13 +48,15 @@ class ServiceFirmware:
                 page=page,
                 per_page=per_page,
                 node_id=node_id,
-                node_location=node_location
+                node_location=node_location,
+                sensor_type=sensor_type
             )
 
             # 2. Total data
             total_data = await self.firmware_repository.count_list_firmware(
                 node_id=node_id,
-                node_location=node_location
+                node_location=node_location,
+                sensor_type=sensor_type
             )
 
             # 3. Total page
@@ -117,7 +120,7 @@ class ServiceFirmware:
             payload = json.dumps({
                 "node_name":node_name,
                 "url": firmware_url
-                })
+            })
             publish.single(topic, payload, hostname=MQTT_ADDRESS)
         except Exception as e:
             raise Exception(f"Gagal Mengirim ke MQTT: {str(e)}")

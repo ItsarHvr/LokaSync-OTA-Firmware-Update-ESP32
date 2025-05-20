@@ -73,6 +73,7 @@ class UpdateFirmwareForm:
 class FilterOptions(TypedDict):
     node_id: List[int]
     node_location: List[str]
+    sensor_type: List[str]
 
 class OutputFirmwarePagination(BasePage):
     page: int

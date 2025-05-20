@@ -15,6 +15,7 @@ router_firmware = APIRouter(prefix="/api/v1", tags=["Firmware"])
 async def get_list_firmware(
     node_id: Optional[int] = Query(default=None, ge=1),
     node_location: Optional[str] = Query(default=None, min_length=1, max_length=255),
+    sensor_type: Optional[str] = Query(default=None, min_length=1, max_length=255),
     page: int = Query(1, ge=1),
     per_page: int = Query(5, ge=1, le=100),
     service_firmware: ServiceFirmware = Depends()
@@ -23,7 +24,8 @@ async def get_list_firmware(
         page=page,
         per_page=per_page,
         node_id=node_id or None,
-        node_location=node_location or None
+        node_location=node_location or None,
+        sensor_type=sensor_type or None
     )
     return response_get
 
