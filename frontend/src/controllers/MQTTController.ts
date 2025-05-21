@@ -4,7 +4,7 @@ import type { MonitoringData } from "../types";
 // Get MQTT config from environment variables with proper protocol handling
 const MQTT_CONFIG = {
   // In browser environments, we need to use WebSockets
-  brokerUrl: `ws://${import.meta.env.VITE_MQTT_BROKER_URL || "broker.emqx.io"}:8083/mqtt`,
+  brokerUrl: `wss://${import.meta.env.VITE_MQTT_BROKER_URL || "broker.emqx.io"}:8084/mqtt`,
   // Regular MQTT port is 1883, but WebSocket is typically on 8083 or 8084 for SSL
   brokerPort: import.meta.env.VITE_MQTT_BROKER_PORT || 8083,
   username: import.meta.env.VITE_MQTT_USERNAME || undefined,

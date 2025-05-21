@@ -442,3 +442,10 @@ gdrive_api_key.json
 # Google Cloud service account keys
 gcloud-service-key.json
 lokasyncGoogleDriveKey.json
+
+# MQTT broker certs
+mqtt-broker-*.pem
+mqtt-broker-*.crt
+ca*.pem
+ca*.crt
+emqxsl-*.crt

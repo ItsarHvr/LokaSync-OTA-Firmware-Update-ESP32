@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/ui/Card";
@@ -7,7 +7,25 @@ import Select from "../../components/ui/Select";
 import Pagination from "../../components/ui/Pagination";
 import Alert from "../../components/ui/Alert";
 import { FirmwareController } from "../../controllers/FirmwareController";
+import { fetchWithAuth } from "../../utils/api";
 import type { Firmware } from "../../types";
+
+// Interface for firmware version options
+interface FirmwareVersionsMap {
+  [nodeName: string]: {
+    versions: string[];
+    loading: boolean;
+    error: string;
+    urls: Record<string, string>; // Map version to URL
+  };
+}
+
+// Interface for tracking description edit state
+interface EditingState {
+  isEditing: boolean;
+  nodeName: string | null;
+  description: string;
+}
 
 const Dashboard = () => {
   // State for firmware data
@@ -20,6 +38,19 @@ const Dashboard = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize] = useState(10);
   const [totalData, setTotalData] = useState(0);
+  
+  // New state to store firmware versions for each node
+  const [firmwareVersions, setFirmwareVersions] = useState<FirmwareVersionsMap>({});
+  
+  // State for description editing
+  const [editingDescription, setEditingDescription] = useState<EditingState>({
+    isEditing: false,
+    nodeName: null,
+    description: "",
+  });
+  
+  // Ref for the textarea
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // State for filters
   const [filterOptions, setFilterOptions] = useState<{
@@ -42,6 +73,81 @@ const Dashboard = () => {
   const [selectedSensorType, setSelectedSensorType] = useState<
     string | undefined
   >(undefined);
+
+  // Effect to focus textarea when editing starts
+  useEffect(() => {
+    if (editingDescription.isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [editingDescription.isEditing]);
+
+  // Fetch firmware versions for a specific node
+  const fetchFirmwareVersions = async (nodeName: string) => {
+    // Skip if we already have loaded versions for this node
+    if (firmwareVersions[nodeName] && firmwareVersions[nodeName].versions.length > 0) {
+      return;
+    }
+
+    // Initialize or update loading state
+    setFirmwareVersions(prev => ({
+      ...prev,
+      [nodeName]: {
+        ...prev[nodeName] || {},
+        loading: true,
+        error: '',
+        versions: [],
+        urls: {},
+      }
+    }));
+
+    try {
+      // Fetch versions from the backend
+      interface FirmwareItem {
+        firmware_version: string;
+        firmware_url: string;
+      }
+      
+      interface FirmwareResponse {
+        firmware_data: FirmwareItem[];
+      }
+      
+      const response = await fetchWithAuth<FirmwareResponse>(`/firmware/get_by_node_name/${nodeName}?page=1&per_page=10`);
+      
+      // Extract versions from response with proper typing
+      const versions: string[] = response.firmware_data.map(
+        (item: FirmwareItem) => item.firmware_version
+      );
+      
+      // Create a map of version to URL
+      const urlMap: Record<string, string> = {};
+      response.firmware_data.forEach((item: FirmwareItem) => {
+        urlMap[item.firmware_version] = item.firmware_url;
+      });
+
+      // Update state with fetched versions
+      setFirmwareVersions(prev => ({
+        ...prev,
+        [nodeName]: {
+          loading: false,
+          error: '',
+          versions: [...new Set(versions)], // Remove duplicates
+          urls: urlMap,
+        }
+      }));
+    } catch (err) {
+      console.error(`Failed to fetch firmware versions for ${nodeName}:`, err);
+      setFirmwareVersions(prev => ({
+        ...prev,
+        [nodeName]: {
+          ...prev[nodeName] || {},
+          loading: false,
+          error: 'Failed to fetch firmware versions',
+          versions: [],
+          urls: {},
+        }
+      }));
+    }
+  };
 
   // Fetch firmware data when filters or pagination changes
   const fetchFirmwares = async () => {
@@ -72,6 +178,13 @@ const Dashboard = () => {
             sensorType: response.filterOptions.sensorType || [],
           });
         }
+
+        // Fetch firmware versions for each node
+        response.firmwareData.forEach(firmware => {
+          if (firmware.nodeName) {
+            fetchFirmwareVersions(firmware.nodeName);
+          }
+        });
       } else {
         setFirmwares(response.firmwareData);
         setTotalPages(response.totalPage);
@@ -92,6 +205,7 @@ const Dashboard = () => {
       setIsLoading(false);
     }
   };
+  
   // Initial fetch on component mount and when filters or pagination changes
   useEffect(() => {
     fetchFirmwares();
@@ -107,6 +221,130 @@ const Dashboard = () => {
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+  
+  // Handle firmware version change
+  const handleVersionChange = async (firmware: Firmware, newVersion: string) => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      // Get the URL for the selected version
+      const url = firmwareVersions[firmware.nodeName]?.urls[newVersion];
+      
+      // Update firmware with new version and URL
+      const updatedFirmware = {
+        ...firmware,
+        firmwareVersion: newVersion,
+        firmwareUrl: url,
+      };
+      
+      // Update the firmware
+      await FirmwareController.publishFirmwareUpdate(updatedFirmware);
+
+      // Refresh data
+      fetchFirmwares();
+      
+      setSuccessMessage(
+        `Firmware version for ${firmware.nodeName} changed to ${newVersion} successfully!`
+      );
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 5000);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message || "Failed to update firmware version");
+      } else {
+        setError("An unknown error occurred while updating firmware version");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Start editing description
+  const startEditingDescription = (firmware: Firmware) => {
+    setEditingDescription({
+      isEditing: true,
+      nodeName: firmware.nodeName,
+      description: firmware.firmwareDescription || "",
+    });
+  };
+  
+  // Cancel editing description
+  const cancelEditingDescription = () => {
+    setEditingDescription({
+      isEditing: false,
+      nodeName: null,
+      description: "",
+    });
+  };
+  
+  // Handle description change
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditingDescription(prev => ({
+      ...prev,
+      description: e.target.value,
+    }));
+  };
+  
+  // Save description
+  const saveDescription = async () => {
+    if (!editingDescription.nodeName) return;
+    
+    try {
+      setIsLoading(true);
+      setError("");
+      
+      // Find the firmware to update
+      const firmware = firmwares.find(f => f.nodeName === editingDescription.nodeName);
+      
+      if (!firmware) {
+        setError("Firmware not found");
+        return;
+      }
+      
+      // Update description in backend
+      await fetchWithAuth(`/firmware/update/${editingDescription.nodeName}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          firmware_description: editingDescription.description
+        }),
+      });
+      
+      // Update local data
+      const updatedFirmwares = firmwares.map(f => 
+        f.nodeName === editingDescription.nodeName 
+          ? { ...f, firmwareDescription: editingDescription.description } 
+          : f
+      );
+      
+      setFirmwares(updatedFirmwares);
+      
+      // Reset editing state
+      setEditingDescription({
+        isEditing: false,
+        nodeName: null,
+        description: "",
+      });
+      
+      setSuccessMessage("Description updated successfully");
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 5000);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message || "Failed to update description");
+      } else {
+        setError("An unknown error occurred while updating description");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Handle publishing firmware update
@@ -333,17 +571,87 @@ const Dashboard = () => {
                       {firmware.nodeLocation}
                     </td>
                     <td className="border-b border-lokasync-border px-4 py-3">
-                      {firmware.firmwareVersion}
+                      {firmware.nodeName && firmwareVersions[firmware.nodeName] ? (
+                        firmwareVersions[firmware.nodeName].loading ? (
+                          <div className="flex items-center">
+                            <div className="w-4 h-4 border-2 border-lokasync-primary border-t-transparent rounded-full animate-spin mr-2"></div>
+                            <span>Loading versions...</span>
+                          </div>
+                        ) : firmwareVersions[firmware.nodeName].error ? (
+                          <div className="text-red-500">
+                            {firmwareVersions[firmware.nodeName].error}
+                          </div>
+                        ) : (
+                          <select
+                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-lokasync-primary"
+                            value={firmware.firmwareVersion}
+                            onChange={(e) => handleVersionChange(firmware, e.target.value)}
+                          >
+                            {firmwareVersions[firmware.nodeName].versions.map(version => (
+                              <option key={version} value={version}>
+                                {version}
+                              </option>
+                            ))}
+                          </select>
+                        )
+                      ) : (
+                        firmware.firmwareVersion
+                      )}
                     </td>
                     <td className="border-b border-lokasync-border px-4 py-3">
-                      {firmware.firmwareDescription}
+                      {editingDescription.isEditing && editingDescription.nodeName === firmware.nodeName ? (
+                        <div className="flex flex-col">
+                          <textarea
+                            ref={textareaRef}
+                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-lokasync-primary mb-1"
+                            value={editingDescription.description}
+                            onChange={handleDescriptionChange}
+                            maxLength={255}
+                            rows={3}
+                          ></textarea>
+                          <div className="flex justify-end space-x-2 text-xs">
+                            <span className="text-gray-500">{editingDescription.description.length}/255</span>
+                            <button
+                              onClick={cancelEditingDescription}
+                              className="text-red-500 hover:text-red-700"
+                              title="Cancel"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={saveDescription}
+                              className="text-green-500 hover:text-green-700"
+                              title="Save"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between group">
+                          <div className="mr-2 truncate">{firmware.firmwareDescription || "No description"}</div>
+                          <button
+                            onClick={() => startEditingDescription(firmware)}
+                            className="text-gray-400 hover:text-lokasync-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Edit Description"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     </td>
                     <td className="border-b border-lokasync-border px-4 py-3">
                       {firmware.sensorType}
                     </td>
                     <td className="border-b border-lokasync-border px-4 py-3">
                       <div className="flex justify-center space-x-2">
-                        {/* Upload firmware icon */}
+                        {/* Publish firmware update button */}
                         <button
                           onClick={() => handlePublishUpdate(firmware)}
                           className="text-lokasync-primary hover:text-lokasync-secondary p-1"
@@ -363,7 +671,7 @@ const Dashboard = () => {
                           </svg>
                         </button>
 
-                        {/* Download Url */}
+                        {/* Download URL */}
                         <a
                           href={firmware.firmwareUrl}
                           target="_blank"
@@ -384,22 +692,6 @@ const Dashboard = () => {
                             />
                           </svg>
                         </a>
-
-                        {/* Edit button */}
-                        <Link
-                          to={`/firmware/edit/${firmware.nodeName}`}
-                          className="text-amber-500 hover:text-amber-700 p-1"
-                          title="Edit Firmware"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                          </svg>
-                        </Link>
 
                         {/* Delete button */}
                         <button
