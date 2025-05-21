@@ -70,6 +70,18 @@ class UpdateFirmwareForm:
             firmware_description=self.firmware_description,
         )
 
+class UpdateFirmwareDescriptionForm:
+    def __init__(
+        self,
+        firmware_description: str = Form(...),
+    ):
+        self.firmware_description = firmware_description
+
+    def to_dto(self) -> InputFirmware:
+        return InputFirmware(
+            firmware_description=self.firmware_description
+        )
+
 class FilterOptions(TypedDict):
     node_id: List[int]
     node_location: List[str]

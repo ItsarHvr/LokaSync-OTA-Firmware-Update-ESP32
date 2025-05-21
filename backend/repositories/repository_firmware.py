@@ -178,6 +178,33 @@ class FirmwareRepository:
         await self.collection.insert_one(new_firmware)
         return new_firmware
     
+    async def update_firmware_description(
+            self,
+            node_name: str,
+            firmware_version: str,
+            firmware_data: dict
+    ):
+        existing_data = await self.collection.find_one({
+            "node_name": node_name,
+            "firmware_version": firmware_version,
+        })
+        if not existing_data:
+            return None
+        
+        result = await self.collection.update_one(
+            {
+                "node_name": node_name,
+                "firmware_version": firmware_version
+            },
+            {
+                "$set": {
+                    "firmware_description": firmware_data.get("firmware_description", ""),
+                    "latest_updated": datetime.now(timezone.utc)
+                }
+            }
+        )
+        return result.modified_count > 0
+    
     async def delete_by_firmware_verison(
             self,
             node_name: str,

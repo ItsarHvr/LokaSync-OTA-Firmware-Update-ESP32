@@ -12,7 +12,7 @@ from bson import ObjectId
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from cores.service_drive import upload_to_drive
-from dtos.dto_firmware import UploadFirmwareForm, UpdateFirmwareForm, OutputFirmwarePagination, OuputFirmwareByNodeName
+from dtos.dto_firmware import UploadFirmwareForm, UpdateFirmwareForm, UpdateFirmwareDescriptionForm, OutputFirmwarePagination, OuputFirmwareByNodeName
 from repositories.repository_firmware import FirmwareRepository
 
 load_dotenv()
@@ -171,11 +171,13 @@ class ServiceFirmware:
             raise Exception(f"Gagal Upload ke GDrive: {str(e)}")
         
         try:
-            new_data = await self.firmware_repository.update_firmware(node_name,{
-                "firmware_description": getattr(form, "firmware_description", ""),
-                "firmware_version": form.firmware_version,
-                "firmware_url": firmware_url,
-            })
+            new_data = await self.firmware_repository.update_firmware(
+                node_name,
+                {
+                    "firmware_description": getattr(form, "firmware_description", ""),
+                    "firmware_version": form.firmware_version,
+                    "firmware_url": firmware_url,
+                })
             if not new_data:
                 raise HTTPException(status_code=404, detail="Firmware not found")
         except Exception as e:
@@ -192,7 +194,26 @@ class ServiceFirmware:
             raise Exception(f"Gagal Mengirim ke MQTT: {str(e)}")
         
         return {"message": "Update firmware successfully."}
-
+    
+    async def update_firmware_description(
+            self,
+            node_name: str,
+            firmware_version: str,
+            form: UpdateFirmwareDescriptionForm
+    ):
+        try:
+            updated = await self.firmware_repository.update_firmware_description(
+                node_name,
+                firmware_version,
+                {
+                    "firmware_description": form.firmware_description,
+                }
+            )
+            if not updated:
+                raise HTTPException(status_code=404, detail="Firmware not found")
+        except Exception as e:
+            raise Exception(f"Gagal input ke MongoDB: {str(e)}")
+        
     async def delete_by_firmware_version(
             self, 
             node_name: str,
