@@ -132,6 +132,7 @@ class ServiceFirmware:
         node_id = firmware_data.get("node_id", "0")
         sensor_type = firmware_data.get("sensor_type", "Unknown")
         node_name = f"{node_location}-node{node_id}-{sensor_type}".lower()
+        firmware_version = firmware_data.get("firmware_version", "1.0.0")
         firmware_data["node_name"] = node_name
 
         #Input to MongoDB
@@ -145,6 +146,7 @@ class ServiceFirmware:
             topic = "LokaSync/CloudOTA/Firmware"
             payload = json.dumps({
                 "node_name":node_name,
+                "firmware_version": firmware_version,
                 "url": firmware_url
             })
             publish.single(topic, payload, hostname=MQTT_ADDRESS)
@@ -187,7 +189,8 @@ class ServiceFirmware:
             topic = "LokaSync/CloudOTA/Firmware"
             payload = json.dumps({
                 "node_name": node_name,
-                "url": firmware_url
+                "url": firmware_url,
+                "firmware_version": form.firmware_version
             })
             publish.single(topic, payload, hostname=MQTT_ADDRESS)
         except Exception as e:
