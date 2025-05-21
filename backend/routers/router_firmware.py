@@ -30,7 +30,7 @@ async def get_list_firmware(
     return response_get
 
 @router_firmware.get(
-    "/firmware/get_by_node_name/{node_name}",
+    "/firmware/{node_name}",
     response_model=OuputFirmwareByNodeName,
     summary="Get list firmware by node_name."
 )
@@ -58,9 +58,9 @@ async def add_firmware(
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})    
 
-@router_firmware.put("/firmware/update/")
+@router_firmware.post("/firmware/update/{node_name}")
 async def update_firmware(
-    node_name: Optional[str] = Query(...),
+    node_name: str,
     form: UpdateFirmwareForm = Depends(),
     service_firmware: ServiceFirmware = Depends()
 ):
@@ -83,9 +83,9 @@ async def update_firmware_description(
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-@router_firmware.delete("/firmware/delete/")
+@router_firmware.delete("/firmware/delete/{node_name}")
 async def delete_firmware(
-    node_name: str = Query(...),
+    node_name: str,
     firmware_version: Optional[str] = Query(None),
     service_firmware: ServiceFirmware = Depends()
 ):
